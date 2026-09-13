@@ -21,6 +21,10 @@ from exa_py import Exa
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
+import sys
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+if _script_dir not in sys.path:
+    sys.path.insert(0, _script_dir)
 from hook_matrix import select_hook_formula, POWER_PHRASES
 
 # ── Load env (local dev; GitHub Actions injects env vars directly) ────────────

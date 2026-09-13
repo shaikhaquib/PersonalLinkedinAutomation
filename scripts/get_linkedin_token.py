@@ -25,8 +25,8 @@ load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env
 
 CLIENT_ID     = os.environ.get("LINKEDIN_CLIENT_ID")
 CLIENT_SECRET = os.environ.get("LINKEDIN_CLIENT_SECRET")
-REDIRECT_URI  = "http://localhost:8080/callback"
-SCOPES        = "openid profile w_member_social email"
+REDIRECT_URI  = os.environ.get("LINKEDIN_REDIRECT_URI", "http://localhost:8080/callback")
+SCOPES        = os.environ.get("LINKEDIN_SCOPES", "openid profile w_member_social")
 
 if not CLIENT_ID or not CLIENT_SECRET:
     sys.exit(
@@ -80,7 +80,9 @@ print(f"\n  {auth_url}\n")
 
 webbrowser.open(auth_url)
 
-server = HTTPServer(("localhost", 8080), CallbackHandler)
+parsed_redirect = urllib.parse.urlparse(REDIRECT_URI)
+listen_port = parsed_redirect.port or 8080
+server = HTTPServer(("localhost", listen_port), CallbackHandler)
 server.handle_request()  # blocks until one request arrives
 
 if not _auth_code:

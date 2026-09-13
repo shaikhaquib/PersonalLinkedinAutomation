@@ -1,0 +1,10 @@
+{
+  "posts_per_day": 1,
+  "preferred_time": "09:00",
+  "timezone": "Asia/Kolkata",
+  "min_topic_score": 0.70,
+  "daily_report": false,
+  "max_review_attempts": 3,
+  "target_post_length": 1300,
+  "max_post_length": 3000
+}

@@ -1,0 +1,83 @@
+name: Autonomous LinkedIn Agent
+
+on:
+  schedule:
+    - cron: '30 3 * * *'   # 9:00 AM IST daily (3:30 AM UTC)
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Force a specific topic (leave blank for autonomous RSS topic discovery)'
+        required: false
+        default: ''
+      preview:
+        description: 'Preview only — do not publish to LinkedIn'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright Chromium
+        run: python -m playwright install chromium --with-deps
+
+      - name: Ensure directories exist
+        run: |
+          mkdir -p renderer/output
+          mkdir -p data
+
+      - name: Run Autonomous Agent
+        run: |
+          python scripts/main.py \
+            ${{ github.event.inputs.preview == 'true' && '--preview' || '' }} \
+            ${{ github.event.inputs.topic != '' && format('--topic "{0}"', github.event.inputs.topic) || '' }}
+        env:
+          GEMINI_API_KEY:         ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY_2:       ${{ secrets.GEMINI_API_KEY_2 }}
+          EURON_API_KEY:          ${{ secrets.EURON_API_KEY }}
+          LINKEDIN_ACCESS_TOKEN:  ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_ID:     ${{ secrets.LINKEDIN_PERSON_ID }}
+          TELEGRAM_BOT_TOKEN:     ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:       ${{ secrets.TELEGRAM_CHAT_ID }}
+          INCLUDE_INFOGRAPHIC:    "1"
+
+      - name: Persist SQLite History to Repository
+        if: github.event.inputs.preview != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/content_history.db || true
+          if git status --porcelain | grep -q "data/content_history.db"; then
+            git commit -m "chore(history): update content_history.db [skip ci]"
+            git push
+          else
+            echo "No database changes to commit."
+          fi
+
+      - name: Upload Infographic Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: infographic-${{ github.run_id }}
+          path: renderer/output/*.png
+          if-no-files-found: ignore
+          retention-days: 14

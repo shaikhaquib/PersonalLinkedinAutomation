@@ -1,0 +1,40 @@
+{
+  "sources": [
+    {
+      "name": "Android Developers Blog",
+      "type": "rss",
+      "url": "https://android-developers.googleblog.com/feeds/posts/default?alt=rss",
+      "category": "android"
+    },
+    {
+      "name": "Kotlin Blog",
+      "type": "rss",
+      "url": "https://blog.jetbrains.com/kotlin/feed/",
+      "category": "kotlin"
+    },
+    {
+      "name": "Google Developers Blog",
+      "type": "rss",
+      "url": "https://developers.googleblog.com/feeds/posts/default?alt=rss",
+      "category": "engineering"
+    },
+    {
+      "name": "Android Studio Releases",
+      "type": "rss",
+      "url": "https://androidstudio.googleblog.com/feeds/posts/default?alt=rss",
+      "category": "tools"
+    },
+    {
+      "name": "Firebase Blog",
+      "type": "rss",
+      "url": "https://firebase.blog/rss.xml",
+      "category": "backend_mobile"
+    },
+    {
+      "name": "OWASP Mobile Security",
+      "type": "rss",
+      "url": "https://github.com/OWASP/owasp-mastg/releases.atom",
+      "category": "security"
+    }
+  ]
+}
