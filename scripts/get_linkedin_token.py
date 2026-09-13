@@ -80,43 +80,33 @@ print(f"\n  {auth_url}\n")
 
 webbrowser.open(auth_url)
 
-import threading
+is_manual = "--manual" in sys.argv
 
 parsed_redirect = urllib.parse.urlparse(REDIRECT_URI)
 listen_port = parsed_redirect.port or 8080
 
-try:
-    server = HTTPServer(("0.0.0.0", listen_port), CallbackHandler)
-    server_thread = threading.Thread(target=server.handle_request, daemon=True)
-    server_thread.start()
-except Exception as e:
-    print(f"  [Notice] Could not start local server on port {listen_port}: {e}")
-
-print("  Waiting for authorization...")
-print("  (If your browser shows 'This site can’t be reached' or you prefer manual entry,")
-print("   copy the full URL from your browser's address bar and paste it below.)\n")
-
-try:
-    manual_input = input("  Paste redirect URL or code here (press Enter to skip): ").strip()
-    if manual_input:
+if is_manual:
+    print("  [Manual Mode] Paste the redirected URL or code below:")
+    try:
+        manual_input = input("  URL or Code: ").strip()
         if "code=" in manual_input:
             parsed = urllib.parse.urlparse(manual_input)
             qs = urllib.parse.parse_qs(parsed.query)
             _auth_code = qs.get("code", [None])[0]
         else:
             _auth_code = manual_input
-except (EOFError, KeyboardInterrupt):
-    pass
-
-if not _auth_code:
-    # Wait for server thread if user didn't type anything
-    if 'server_thread' in locals():
-        server_thread.join(timeout=30)
+    except Exception as e:
+        sys.exit(f"ERROR: {e}")
+else:
+    print(f"  Callback listener started on port {listen_port}.")
+    print("  Waiting for authorization redirect from your browser...")
+    server = HTTPServer(("0.0.0.0", listen_port), CallbackHandler)
+    server.handle_request()  # Blocks until the browser redirect request arrives
 
 if not _auth_code:
     sys.exit("ERROR: No authorization code received. Did you approve the app?")
 
-print("  Authorization code received.\n")
+print("  Authorization code received!\n")
 
 # ── Step 4: exchange code for access token ────────────────────────────────────
 
@@ -141,7 +131,18 @@ expires_days = round(expires_in / 86400)
 if not access_token:
     sys.exit(f"ERROR: Token exchange failed: {token_resp}")
 
-print(f"  Access token received (expires in ~{expires_days} days).\n")
+# Auto-save access token to .env immediately
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+if os.path.exists(env_path):
+    with open(env_path, "r", encoding="utf-8") as f:
+        env_content = f.read()
+    if "LINKEDIN_ACCESS_TOKEN=" in env_content:
+        env_content = re.sub(r"LINKEDIN_ACCESS_TOKEN=.*", f"LINKEDIN_ACCESS_TOKEN={access_token}", env_content)
+    else:
+        env_content += f"\nLINKEDIN_ACCESS_TOKEN={access_token}"
+    with open(env_path, "w", encoding="utf-8") as f:
+        f.write(env_content)
+    print(f"  [Success] Saved LINKEDIN_ACCESS_TOKEN to .env")
 
 # ── Step 5: fetch person ID from userinfo or me ───────────────────────────────
 
@@ -178,30 +179,28 @@ if not person_id:
     except Exception:
         pass
 
-if not person_id:
-    print("\n  [Notice] Could not auto-detect Person ID (requires OpenID product).")
-    manual_pid = input("  Enter your LinkedIn Person ID (or press Enter to set later): ").strip()
-    person_id = manual_pid if manual_pid else "YOUR_LINKEDIN_PERSON_ID"
-
-# Auto-save to .env
-env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
-if os.path.exists(env_path):
+if person_id and os.path.exists(env_path):
     with open(env_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    if "LINKEDIN_ACCESS_TOKEN=" in content:
-        content = re.sub(r"LINKEDIN_ACCESS_TOKEN=.*", f"LINKEDIN_ACCESS_TOKEN={access_token}", content)
+        env_content = f.read()
+    if "LINKEDIN_PERSON_ID=" in env_content:
+        env_content = re.sub(r"LINKEDIN_PERSON_ID=.*", f"LINKEDIN_PERSON_ID={person_id}", env_content)
     else:
-        content += f"\nLINKEDIN_ACCESS_TOKEN={access_token}"
-    if "LINKEDIN_PERSON_ID=" in content:
-        content = re.sub(r"LINKEDIN_PERSON_ID=.*", f"LINKEDIN_PERSON_ID={person_id}", content)
-    else:
-        content += f"\nLINKEDIN_PERSON_ID={person_id}"
+        env_content += f"\nLINKEDIN_PERSON_ID={person_id}"
     with open(env_path, "w", encoding="utf-8") as f:
-        f.write(content)
-    print(f"  [Success] Saved LINKEDIN_ACCESS_TOKEN and LINKEDIN_PERSON_ID to .env")
+        f.write(env_content)
+    print(f"  [Success] Saved LINKEDIN_PERSON_ID ({person_id}) to .env")
 
+print("\n" + "="*60)
+print(f"  LINKEDIN AUTHENTICATION SUCCESSFUL")
 print("="*60)
-print(f"  Authenticated as: {person_name}")
+print(f"  Authenticated User : {person_name}")
+print(f"  Access Token (60d) : {access_token[:20]}... [Saved in .env]")
+if person_id:
+    print(f"  Person ID          : {person_id} [Saved in .env]")
+else:
+    print("  Person ID          : Auto-detect requires 'Sign In with OpenID Connect' product")
+    print("                       OR find your member ID on your profile URL.")
+print("="*60 + "\n")
 print("="*60)
 print()
 print("  Copy these two values into your GitHub secrets")
