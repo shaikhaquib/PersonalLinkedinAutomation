@@ -60,11 +60,11 @@ class WritingAgent:
         Generates draft and first comment.
         Returns (post_text: str, first_comment: str).
         """
-        from datetime import datetime
-        day_of_year = datetime.now().timetuple().tm_yday
-        hook_data = select_hook_formula("educational", day_of_year, 0)
-        hook_name = hook_data.get("name", "Technical Observation")
-        hook_skeleton = hook_data.get("skeleton", "")
+        import time
+        from hook_matrix import select_hook_formula
+        hook_data = select_hook_formula(int(time.time()), 0)
+        hook_name = hook_data.get("name", "Technical Architecture Hook")
+        hook_instruction = hook_data.get("instruction", "")
 
         feedback_section = f"\n\nCRITICAL FIXES FROM PREVIOUS REVIEW:\n{feedback}\nAddress these issues immediately." if feedback else ""
 
@@ -74,9 +74,13 @@ Topic: {topic}
 Context / Research Data:
 {source_context}
 
-Hook Formula to use: {hook_name}
-Hook Template Structure:
-{hook_skeleton}
+Opening Style Requirement: {hook_name}
+Guidance for this post's hook:
+{hook_instruction}
+
+STRICT RULE ON OPENING:
+- NEVER start with 'Three weeks ago', 'Two weeks ago', 'Six weeks ago', 'On Tuesday', 'On October 14th', or any formulaic time anchor.
+- Jump STRAIGHT into the technical problem, counter-intuitive insight, architecture rule, or production constraint.
 
 Verified Technical Knowledge Base:
 {self.knowledge_context[:3000]}
