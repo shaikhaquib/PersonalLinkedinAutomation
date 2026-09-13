@@ -14,6 +14,7 @@ Requirements:
 
 import os
 import sys
+import re
 import secrets
 import webbrowser
 import urllib.parse
