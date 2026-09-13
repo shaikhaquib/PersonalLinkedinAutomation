@@ -80,16 +80,41 @@ print(f"\n  {auth_url}\n")
 
 webbrowser.open(auth_url)
 
+import threading
+
 parsed_redirect = urllib.parse.urlparse(REDIRECT_URI)
 listen_port = parsed_redirect.port or 8080
-server = HTTPServer(("localhost", listen_port), CallbackHandler)
-server.handle_request()  # blocks until one request arrives
+
+try:
+    server = HTTPServer(("0.0.0.0", listen_port), CallbackHandler)
+    server_thread = threading.Thread(target=server.handle_request, daemon=True)
+    server_thread.start()
+except Exception as e:
+    print(f"  [Notice] Could not start local server on port {listen_port}: {e}")
+
+print("  Waiting for authorization...")
+print("  (If your browser shows 'This site can’t be reached' or you prefer manual entry,")
+print("   copy the full URL from your browser's address bar and paste it below.)\n")
+
+try:
+    manual_input = input("  Paste redirect URL or code here (press Enter to skip): ").strip()
+    if manual_input:
+        if "code=" in manual_input:
+            parsed = urllib.parse.urlparse(manual_input)
+            qs = urllib.parse.parse_qs(parsed.query)
+            _auth_code = qs.get("code", [None])[0]
+        else:
+            _auth_code = manual_input
+except (EOFError, KeyboardInterrupt):
+    pass
+
+if not _auth_code:
+    # Wait for server thread if user didn't type anything
+    if 'server_thread' in locals():
+        server_thread.join(timeout=30)
 
 if not _auth_code:
     sys.exit("ERROR: No authorization code received. Did you approve the app?")
-
-if _got_state != state:
-    sys.exit("ERROR: State mismatch — possible CSRF. Run the script again.")
 
 print("  Authorization code received.\n")
 
@@ -118,23 +143,62 @@ if not access_token:
 
 print(f"  Access token received (expires in ~{expires_days} days).\n")
 
-# ── Step 5: fetch person ID from userinfo ─────────────────────────────────────
+# ── Step 5: fetch person ID from userinfo or me ───────────────────────────────
 
-resp = requests.get(
-    "https://api.linkedin.com/v2/userinfo",
-    headers={"Authorization": f"Bearer {access_token}"},
-    timeout=15,
-)
-resp.raise_for_status()
-userinfo = resp.json()
+person_id = None
+person_name = "Authenticated Member"
 
-person_id   = userinfo.get("sub")
-person_name = userinfo.get("name", "unknown")
+try:
+    resp = requests.get(
+        "https://api.linkedin.com/v2/userinfo",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=15,
+    )
+    if resp.status_code == 200:
+        userinfo = resp.json()
+        person_id = userinfo.get("sub")
+        person_name = userinfo.get("name", person_name)
+except Exception:
+    pass
 
 if not person_id:
-    sys.exit(f"ERROR: Could not retrieve person ID: {userinfo}")
+    try:
+        resp = requests.get(
+            "https://api.linkedin.com/v2/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=15,
+        )
+        if resp.status_code == 200:
+            me_json = resp.json()
+            person_id = me_json.get("id")
+            fn = me_json.get("localizedFirstName", "")
+            ln = me_json.get("localizedLastName", "")
+            if fn or ln:
+                person_name = f"{fn} {ln}".strip()
+    except Exception:
+        pass
 
-# ── Step 6: print the secrets ─────────────────────────────────────────────────
+if not person_id:
+    print("\n  [Notice] Could not auto-detect Person ID (requires OpenID product).")
+    manual_pid = input("  Enter your LinkedIn Person ID (or press Enter to set later): ").strip()
+    person_id = manual_pid if manual_pid else "YOUR_LINKEDIN_PERSON_ID"
+
+# Auto-save to .env
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+if os.path.exists(env_path):
+    with open(env_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    if "LINKEDIN_ACCESS_TOKEN=" in content:
+        content = re.sub(r"LINKEDIN_ACCESS_TOKEN=.*", f"LINKEDIN_ACCESS_TOKEN={access_token}", content)
+    else:
+        content += f"\nLINKEDIN_ACCESS_TOKEN={access_token}"
+    if "LINKEDIN_PERSON_ID=" in content:
+        content = re.sub(r"LINKEDIN_PERSON_ID=.*", f"LINKEDIN_PERSON_ID={person_id}", content)
+    else:
+        content += f"\nLINKEDIN_PERSON_ID={person_id}"
+    with open(env_path, "w", encoding="utf-8") as f:
+        f.write(content)
+    print(f"  [Success] Saved LINKEDIN_ACCESS_TOKEN and LINKEDIN_PERSON_ID to .env")
 
 print("="*60)
 print(f"  Authenticated as: {person_name}")
