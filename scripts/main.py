@@ -129,7 +129,7 @@ def generate_text(prompt: str, system_instruction: str = "") -> str:
 # MAIN ORCHESTRATION PIPELINE
 # ══════════════════════════════════════════════════════════════════════════════
 
-def run_agent(preview: bool = False, force_topic: str = None):
+def run_agent(preview: bool = False, force_topic: str = None, force_publish: bool = False):
     print("=" * 65)
     print("  AUTONOMOUS LINKEDIN AGENT — Senior Android Developer")
     print("=" * 65)
@@ -140,8 +140,8 @@ def run_agent(preview: bool = False, force_topic: str = None):
     notifier = TelegramNotifier()
     history = HistoryManager()
 
-    # Step 1: Idempotency Lock
-    if not preview:
+    # Step 1: Idempotency Lock (bypassed if preview, manual force_publish, or manual topic override)
+    if not preview and not force_publish and not force_topic:
         if history.has_published_today(SETTINGS.get("timezone", "Asia/Kolkata")):
             print("[IDEMPOTENCY] A post has already been published today in the current posting window.")
             print("[IDEMPOTENCY] Aborting to strictly enforce 1 post/day schedule.")
@@ -303,6 +303,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Autonomous LinkedIn Agent")
     parser.add_argument("--preview", action="store_true", help="Preview only, do not publish to LinkedIn")
     parser.add_argument("--topic", type=str, default=None, help="Force a specific topic")
+    parser.add_argument("--force", action="store_true", help="Bypass idempotency lock and force publish")
     args = parser.parse_args()
 
-    run_agent(preview=args.preview, force_topic=args.topic)
+    run_agent(preview=args.preview, force_topic=args.topic, force_publish=args.force)
