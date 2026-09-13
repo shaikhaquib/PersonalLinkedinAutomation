@@ -1,30 +1,29 @@
-# LinkedIn Post Automation
+# Autonomous LinkedIn Engineering Agent
 
-An AI agent that researches trending AI/ML topics, writes a short, hook-driven post in one engineer's
-learning-in-public voice, generates a matching infographic, and publishes both directly to LinkedIn —
-4× every day, fully unattended.
+An autonomous publishing pipeline designed for **Senior Android Developer & Mobile Tech Lead** content. Researches and structures deep-dive technical posts, enforces zero AI jargon, renders high-resolution architecture blueprint and code cards via Playwright, and publishes to LinkedIn with author first-comment seeding.
 
-**No VPS needed. No manual work. Fully automated via GitHub Actions.**
+**No VPS or heavy Docker containers needed. Operates serverless via GitHub Actions or locally.**
 
 ---
 
-## How It Works
+## Architecture Overview
 
-```
-GitHub Actions (9 AM / 1 PM / 6 PM / 10 PM IST)
-        ↓
-Exa — neural web research on a random AI/tech topic
-        ↓
-Gemini — generates a post using a hook formula from the hook matrix
-  └─ fallback: Gemini key #2 → Euron API
-        ↓
-Gemini — humanizes the draft (strips AI-sounding tells, tightens length)
-        ↓
-Gemini + Playwright — generates a matching infographic (dark or light theme)
-        ↓
-LinkedIn API — publishes the post + infographic directly to your profile
-        ↓
-LinkedIn API — drops a topic-specific engagement comment (the author's own "first reply")
+```mermaid
+flowchart TD
+    A[Step 1: RSS Discovery & Curated Knowledge] --> B[Step 2: Topic Scoring & Dedup]
+    B --> C[Step 3: 5-Archetype Hook Matrix Selection]
+    C --> D[Step 4: Writing Agent & Knowledge Grounding]
+    D --> E[Step 5: Quality Reviewer 6-Metric Gate]
+    E -- Rejected (max 3 retries) --> D
+    E -- Passed --> F[Step 6: Image Decision Agent]
+    F -->|Architecture/Internals| G1[Architecture Blueprint Card]
+    F -->|Code Autopsy/Anti-Pattern| G2[Syntax-Highlighted Code Card]
+    F -->|Discussion/Lesson| G3[Text-Only Post]
+    G1 & G2 --> H[Playwright Dynamic Height PNG Render]
+    H & G3 --> I[Step 7: Content Calendar & Publishing]
+    I -->|Scheduled Queue| J1[content_calendar.json & CONTENT_CALENDAR.md]
+    I -->|Dry-Run| J2[Log LinkedIn UGC JSON Payload]
+    I -->|Live Publish| J3[LinkedIn API UGC Post + First Comment]
 ```
 
 ---
@@ -33,200 +32,119 @@ LinkedIn API — drops a topic-specific engagement comment (the author's own "fi
 
 | Tool | Purpose |
 |---|---|
-| **GitHub Actions** | 4× daily scheduling (replaces VPS/cron) |
-| **Exa** | Real-time neural web research |
-| **Google Gemini** | Post generation, humanizing, and infographic content — dual-key with quota rotation, auto-falls-through if a model gets retired |
-| **Euron API** | Fallback when all Gemini keys are exhausted |
-| **Playwright + Jinja2** | Renders the infographic (HTML/CSS template → PNG) |
-| **LinkedIn UGC API** | Direct publishing of the post, image, and first comment |
+| **GitHub Actions** | Daily 09:00 AM IST scheduling (`cron: '30 3 * * *'`) |
+| **Google Gemini** | Domain post generation, quality scoring, and structured card content |
+| **Playwright + Jinja2** | High-DPI (3x scale, ~3240px wide) SVG/HTML/CSS card rendering |
+| **SQLite3** | Persistent topic and content hash deduplication (`data/content_history.db`) |
+| **LinkedIn REST API** | Direct OAuth publishing of text, image assets, and author first comment |
 
 ---
 
-## Quick Start
+## 5 Blueprint Archetypes
 
-### 1. Clone the repo
+Rotates deterministically through the calibrated formulas in `scripts/hook_matrix.py`:
 
-```bash
-git clone https://github.com/vipinvishal/LinkedIN-Post-automation.git
-cd LinkedIN-Post-automation
-```
+1. **`HARDWARE_LOW_LEVEL_DEEP_DIVE`** — BLE ATT/GATT internals, MTU negotiation, battery drain, driver IPC.
+2. **`CODE_AUTOPSY_TEARDOWN`** — Production memory leaks, coroutine cancellation exceptions, ANR autopsies.
+3. **`SCALE_INCIDENT_WAR_STORY`** — 50M+ user streaming stalls, ExoPlayer buffer tuning, payment gateway race conditions.
+4. **`OS_INTERNALS_DEEP_DIVE`** — Android 16/15 changes, 16KB page sizes, binder transaction buffer limits, runtime permissions.
+5. **`CONTRARIAN_ARCHITECTURE_CALLOUT`** — Pragmatic critiques of Clean Architecture dogmatism, over-engineering, and premature abstraction.
 
-### 2. Create a virtual environment and install dependencies
+---
+
+## Quick Start (Local)
+
+### 1. Set Up Environment
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
-python -m playwright install chromium   # needed to render the infographic locally
+python -m playwright install chromium --with-deps
 ```
 
-### 3. Set up your `.env` file
+### 2. Configure `.env`
+
+Copy `.env.example` to `.env` and fill in credentials:
+- `GEMINI_API_KEY`: Google AI Studio key
+- `LINKEDIN_ACCESS_TOKEN` & `LINKEDIN_PERSON_ID`: LinkedIn OAuth credentials (generate via `python scripts/get_linkedin_token.py`)
+
+### 3. Local CLI Commands
 
 ```bash
-cp .env.example .env
+# Preview post generation & quality review without publishing
+python scripts/main.py --preview
+
+# Dry-run execution (generates post, renders image, logs exact LinkedIn payload)
+python scripts/main.py --dry-run
+
+# Pre-generate and schedule a post into the calendar for tomorrow 09:00 AM IST
+python scripts/scheduler.py --schedule-tomorrow
+
+# View the active scheduled content queue
+python scripts/scheduler.py --list
+
+# Run tests
+python -m unittest discover tests
 ```
 
-Fill in your API keys (see [Configuration](#configuration) below).
-
-### 4. Test locally before going live
-
-```bash
-# Preview a generated post + infographic without posting to LinkedIn
-python scripts/generate_and_schedule.py --preview
-
-# Run the full pipeline (research → generate → humanize → infographic → post → comment)
-python scripts/generate_and_schedule.py
-```
-
-The generated infographic is written to `renderer/output/infographic.png` on every run.
-
 ---
 
-## Configuration
+## Content Calendar & Scheduling
 
-Add these to your `.env` file:
+LinkedIn's official REST API does not support native scheduling parameters; posts sent via the API are published immediately. 
 
-| Variable | Where to get it | Required |
-|---|---|---|
-| `GEMINI_API_KEY` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | Yes |
-| `GEMINI_API_KEY_2` | Same — second Google account | Optional (quota fallback) |
-| `EURON_API_KEY` | [euron.one](https://euron.one) | Optional (last-resort fallback) |
-| `EXA_API_KEY` | [exa.ai](https://exa.ai) | Yes |
-| `LINKEDIN_ACCESS_TOKEN` | Run `python scripts/get_linkedin_token.py` | Yes |
-| `LINKEDIN_PERSON_ID` | Run `python scripts/get_linkedin_token.py` | Yes |
-| `GEMINI_MODEL` | Overrides the default model (`gemini-flash-latest`) | Optional |
-| `INCLUDE_INFOGRAPHIC` | Set to `0` to skip infographic generation entirely | Optional (default `1`) |
-| `INFOGRAPHIC_THEME` | `dark` (default) or `light` | Optional |
-
-LinkedIn's OAuth token expires roughly every 60 days — when posting starts failing with a 401, re-run
-`python scripts/get_linkedin_token.py` and update the secret/env var.
-
----
-
-## GitHub Actions Setup (Automated Daily Posting)
-
-### 1. Add secrets to your GitHub repo
-
-Go to **Settings → Secrets and variables → Actions → New repository secret** and add:
-
-- `GEMINI_API_KEY`
-- `GEMINI_API_KEY_2`
-- `EURON_API_KEY`
-- `EXA_API_KEY`
-- `LINKEDIN_ACCESS_TOKEN`
-- `LINKEDIN_PERSON_ID`
-
-### 2. The workflow runs automatically
-
-The workflow is defined in `.github/workflows/daily_post.yml` and triggers 4× daily:
-
-| Time (IST) | Content Slot |
-|---|---|
-| 9:00 AM | Breaking AI news / hot take |
-| 1:00 PM | AI educational post |
-| 6:00 PM | Personal learning / build-in-public |
-| 10:00 PM | Advanced AI concept |
-
-You can also trigger it manually anytime:
-**GitHub repo → Actions → Daily LinkedIn Post → Run workflow** (check **preview** to test without publishing)
-
----
-
-## Content Pipeline
-
-Every run follows the same six steps (see `scripts/generate_and_schedule.py::main()`):
-
-1. **Research** — Exa pulls 5 recent sources on a topic drawn from the active content slot.
-2. **Generate** — Gemini writes the post using one of two body structures (problem→solution or
-   scenario→risk→solution, alternated deterministically by day), with the opening line driven by
-   a formula picked from the [hook matrix](#hook-matrix). Target length: 900-1,300 characters —
-   short enough to read in one glance while scrolling, not an essay.
-3. **Humanize** — a second pass strips AI-sounding vocabulary, reveal-bridge phrasing, negative
-   parallelism, and manufactured sentence-rhythm tricks, without changing any fact, number, or claim.
-4. **Infographic** — Gemini turns the *same* post into structured "how it works" content (stages,
-   4 numbered steps, a closing hook), rendered to PNG via a Jinja2/Playwright template. Because it's
-   generated from the final post text, it's always in sync with whatever hook/topic that post used.
-5. **Post** — publishes the text + infographic directly via the LinkedIn UGC API.
-6. **Engagement comment** — drops a short, topic-specific comment (also model-generated, in the
-   author's voice) as the post's first reply, to seed discussion.
-
-### Hook Matrix
-
-`scripts/hook_matrix.py` is a library of scroll-stopping opener formulas built specifically for this
-persona (an individual engineer learning AI/ML in public — not a founder or business voice). It covers:
-
-- **Pattern interrupts** — e.g. "The Broken Assumption", "The Silent Change"
-- **Psychological triggers** — competence-gap, insider-knowledge, relatable-struggle, specificity-as-authority
-- **Curiosity gaps** — must resolve within ~210 characters (LinkedIn's "see more" cutoff), with a
-  banned-phrase list for manufactured-curiosity tells
-- **Power phrases** — grounded, first-person connective lines, offered as optional seasoning
-- **8 full hook structures** — Number-First Reveal, Time-Anchor Confession, Controlled A/B Anecdote,
-  Curiosity-Gap Teaser, Contrarian + Dated Receipts, Anecdote-Meets-Evidence Bridge, Explain-While-
-  Learning, False-Binary Dissolve
-
-`select_hook_formula()` rotates through the matrix deterministically (day-of-year + slot index), so
-every formula gets exercised evenly over time instead of clustering by chance.
-
-### Infographics
-
-Two themes live in `renderer/templates/`: `process_infographic_dark.html.j2` (default) and
-`process_infographic.html.j2` (light). Switch with `INFOGRAPHIC_THEME=light` — no code change needed.
-Both share the same layout (3-stage flow, 4 numbered cards, two "flow chip" summaries, a sticky-note
-pull-quote) and the same violet/amber/green/magenta accent system, just recolored for contrast.
-
----
-
-## Customizing Topics & Persona
-
-Edit `scripts/topics.json` to change:
-
-- **`niche`** — the content category
-- **`persona`** — the voice and style of the posts
-- **`content_slots`** — topics and tones for each time slot
-
-Edit `scripts/hook_matrix.py` to add, remove, or retune hook formulas — each entry has a `best_for`
-list of content slots it's tagged for.
+This repository solves scheduling via an **Autonomous Content Calendar**:
+1. **Staging**: Posts can be pre-generated, quality-gated, and queued in `data/content_calendar.json` and human-readable `CONTENT_CALENDAR.md`.
+2. **Daily Execution Trigger**: When the daily runner executes (`09:00 AM IST`), `scripts/main.py` checks `calendar.get_due_post()`. If a post is queued for today, it publishes the pre-approved text, image card, and comment, and marks the item as published.
+3. **Native Web UI Alternative**: You can copy-paste pre-generated content directly from `CONTENT_CALENDAR.md` into LinkedIn desktop's built-in scheduler (clock icon).
 
 ---
 
 ## Project Structure
 
 ```
-├── scripts/
-│   ├── generate_and_schedule.py   # main pipeline (research → generate → humanize → post → comment)
-│   ├── infographic.py             # infographic content generation + LinkedIn image upload
-│   ├── hook_matrix.py             # niche-specific hook formula library
-│   ├── topics.json                # niche, topics, tones, persona
-│   └── get_linkedin_token.py      # one-time / periodic helper to (re-)get LinkedIn tokens
+├── .github/workflows/
+│   └── linkedin-agent.yml         # GitHub Actions daily runner & calendar sync
+├── config/
+│   ├── persona.json               # Profile persona and tone calibration
+│   └── sources.json               # Curated RSS engineering feeds
+├── data/
+│   ├── content_calendar.json      # Machine-readable scheduled posts queue
+│   └── content_history.db         # Deduplication and publish history database
+├── knowledge/                     # 10 domain reference guides for grounding
+│   ├── android.md                 # Jetpack Compose, Coroutines, Memory, Binder IPC
+│   ├── architecture.md            # Modularization, Clean Arch, MVI/Unidirectional
+│   ├── ble_hardware.md            # GATT/ATT layers, MTU negotiation, BLE caching
+│   ├── fintech.md                 # Idempotency, tokenization, payment SDKs
+│   ├── kotlin.md                  # Kotlin 2.0 compiler, K2, Coroutines, Flow
+│   ├── media_streaming.md         # ExoPlayer/Media3, LoadControl buffers, HLS/DASH
+│   └── performance.md             # Baseline Profiles, Macrobenchmark, ANRs, App Startup
 ├── renderer/
-│   ├── render.py                  # Jinja2 → Playwright PNG renderer
+│   ├── render.py                  # Playwright headless renderer (dynamic height, 3x scale)
 │   └── templates/
-│       ├── process_infographic.html.j2        # light theme
-│       └── process_infographic_dark.html.j2   # dark theme (default)
-├── .github/
-│   └── workflows/
-│       └── daily_post.yml         # GitHub Actions workflow
-├── test_infographic.py            # exercises the live infographic-generation path
-├── .env.example                   # template — copy to .env and fill in keys
-├── requirements.txt               # Python dependencies
-└── .gitignore
+│       ├── process_infographic_dark.html.j2    # Architecture Blueprint Card (Dark)
+│       ├── process_infographic_light.html.j2   # Architecture Blueprint Card (Light)
+│       ├── code_card_dark.html.j2              # Syntax Code Card (Dark)
+│       └── code_card_light.html.j2             # Syntax Code Card (Light)
+├── scripts/
+│   ├── main.py                    # Main pipeline entrypoint & CLI
+│   ├── scheduler.py               # Content calendar controller CLI
+│   ├── infographic.py             # Card generator, token validator, image uploader
+│   ├── hook_matrix.py             # 5 Blueprint hook archetypes
+│   ├── services/
+│   │   ├── calendar_manager.py    # Calendar queue CRUD and Markdown sync
+│   │   ├── writing_agent.py       # Grounded technical post drafting
+│   │   ├── quality_reviewer.py    # 6-metric strict quality gate
+│   │   ├── image_decision.py      # Template and theme selection
+│   │   ├── linkedin_publisher.py  # LinkedIn UGC API integration
+│   │   ├── rss_fetcher.py         # Engineering blog discovery
+│   │   └── topic_analyzer.py      # Topic evaluation and deduplication
+│   └── storage/
+│       └── history_manager.py     # SQLite history and fuzzy deduplication
+├── CONTENT_CALENDAR.md            # Human-readable content calendar
+└── requirements.txt               # Dependencies
 ```
-
----
-
-## Fallback Chain
-
-If a model gets retired or a key hits its daily quota, the bot automatically falls through:
-
-```
-gemini-flash-latest → gemini-3.6-flash → gemini-2.5-flash  (key #1)
-        → same model list on key #2
-        → Euron API (gemini-3.6-flash)
-```
-
-A 404 "model not found" (e.g. a future Gemini retirement) is treated the same as a quota error — it
-tries the next model automatically instead of failing the whole run. No manual intervention needed
-unless every fallback is exhausted, in which case the run fails loudly with a clear error.
 
 ---
 

@@ -16,18 +16,24 @@ import tempfile
 from jinja2 import Environment, FileSystemLoader
 
 ROOT      = pathlib.Path(__file__).parent
-TEMPLATE  = "process_infographic.html.j2"
+TEMPLATE  = "process_infographic_dark.html.j2"
 OUTPUT    = ROOT / "output" / "infographic.png"
 
 # Canvas size per template.
 _CANVAS_SIZES = {
-    "process_infographic.html.j2":      (1080, 1410),
     "process_infographic_dark.html.j2": (1080, 1410),
+    "code_card_dark.html.j2":           (1080, 1410),
+    "process_infographic_light.html.j2":(1080, 1410),
+    "code_card_light.html.j2":          (1080, 1410),
 }
 
 
 def _build_html(content: dict, template: str = TEMPLATE) -> str:
-    env  = Environment(loader=FileSystemLoader(str(ROOT / "templates")))
+    from jinja2 import select_autoescape
+    env  = Environment(
+        loader=FileSystemLoader(str(ROOT / "templates")),
+        autoescape=select_autoescape(["html", "htm", "xml", "j2"])
+    )
     tmpl = env.get_template(template)
     return tmpl.render(**content)
 
@@ -66,7 +72,18 @@ def render(content: dict, out_path: str, template: str = TEMPLATE, scale: int = 
             page.wait_for_load_state("networkidle")   # waits for Google Fonts
             page.wait_for_timeout(800)                # extra buffer for font apply
             _draw(page)                               # draw arrows from real positions
-            page.wait_for_timeout(150)                # let SVG paint
+            page.wait_for_timeout(200)                # let SVG paint & dynamic height settle
+
+            # Phase 2.8: Dynamically adapt viewport to rendered .page height (prevents bottom clipping)
+            rendered_h = page.evaluate("""() => {
+                const el = document.querySelector('.page');
+                return el ? Math.ceil(el.getBoundingClientRect().height) : 1410;
+            }""")
+            final_h = max(1410, min(1850, int(rendered_h)))
+            if final_h != height:
+                page.set_viewport_size({"width": width, "height": final_h})
+                page.wait_for_timeout(100)
+
             el = page.query_selector(".page")
             el.screenshot(path=str(out_path))
             browser.close()

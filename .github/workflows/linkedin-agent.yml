@@ -10,7 +10,17 @@ on:
         required: false
         default: ''
       preview:
-        description: 'Preview only — do not publish to LinkedIn'
+        description: 'Preview only — generate and review without publishing or saving history'
+        required: false
+        type: boolean
+        default: false
+      dry_run:
+        description: 'Dry run — execute full pipeline and log LinkedIn payload without sending to LinkedIn API'
+        required: false
+        type: boolean
+        default: false
+      schedule_tomorrow:
+        description: 'Schedule for tomorrow — pre-generate, quality-review, render card, and queue for tomorrow 09:00 IST'
         required: false
         type: boolean
         default: false
@@ -49,6 +59,8 @@ jobs:
         run: |
           python scripts/main.py \
             ${{ github.event.inputs.preview == 'true' && '--preview' || '' }} \
+            ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }} \
+            ${{ github.event.inputs.schedule_tomorrow == 'true' && '--schedule-tomorrow' || '' }} \
             ${{ github.event.inputs.topic != '' && format('--topic "{0}"', github.event.inputs.topic) || '' }}
         env:
           GEMINI_API_KEY:         ${{ secrets.GEMINI_API_KEY }}
@@ -60,17 +72,17 @@ jobs:
           TELEGRAM_CHAT_ID:       ${{ secrets.TELEGRAM_CHAT_ID }}
           INCLUDE_INFOGRAPHIC:    "1"
 
-      - name: Persist SQLite History to Repository
+      - name: Persist Calendar and History to Repository
         if: github.event.inputs.preview != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/content_history.db || true
-          if git status --porcelain | grep -q "data/content_history.db"; then
-            git commit -m "chore(history): update content_history.db [skip ci]"
+          git add data/content_history.db data/content_calendar.json CONTENT_CALENDAR.md || true
+          if git status --porcelain | grep -qE "data/|CONTENT_CALENDAR.md"; then
+            git commit -m "chore(automation): sync content calendar and history [skip ci]"
             git push
           else
-            echo "No database changes to commit."
+            echo "No changes to commit."
           fi
 
       - name: Upload Infographic Artifact

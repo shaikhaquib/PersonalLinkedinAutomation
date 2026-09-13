@@ -1,85 +1,122 @@
 """
-Hook Matrix — 12 diverse, non-formulaic opening styles for a Senior Android Developer & Architect.
-Eliminates repetitive tropes like 'Three weeks ago, I believed...' and gives real engineering variety.
+Hook Matrix — exactly 5 archetypes per AGENT_SYSTEM_BLUEPRINT.md §5.
+Each archetype has a structurally distinct opening style calibrated against
+the blueprint's 5 sample posts to prevent opener repetition.
+
+Blueprint §5 Archetypes:
+  1. CODE_AUTOPSY_TEARDOWN       — Before/After code comparison
+  2. SCALE_INCIDENT_WAR_STORY    — 50M+ user scale production incident
+  3. OS_INTERNALS_DEEP_DIVE      — Android OS / Linux kernel mechanism
+  4. CONTRARIAN_ARCHITECTURE_CALLOUT — Cargo-cult anti-pattern callout
+  5. HARDWARE_LOW_LEVEL_DEEP_DIVE — BLE/IPC/OTT hardware protocol layer
 """
 
 import random
 
 HOOK_STYLES = [
     {
-        "id": "PROD_INCIDENT",
-        "name": "Production Incident / Post-Mortem Hook",
+        "id": "CODE_AUTOPSY_TEARDOWN",
+        "name": "Code Autopsy / Architectural Teardown",
+        "template_hint": "code_card_dark.html.j2",
         "instruction": (
-            "Open directly with an architecture problem, crash, or unexpected behavior seen in production. "
-            "Never start with 'Three weeks ago' or 'Yesterday'. "
-            "Example: 'A single unhandled configuration change on a foldable device will silently wipe your ViewModel state if you're not using SavedStateHandle.' "
-            "or 'GATT status 133 is the most frustrating error in Android BLE—and 90% of the time, it's caused by calling connect() before the native stack has closed.'"
-        )
+            "Open directly with a subtle production bug rooted in a widely-used code pattern. "
+            "Do NOT open with a time anchor ('three weeks ago', 'yesterday'). "
+            "Start with the architectural problem itself: what the bad code does, "
+            "and why it causes silent failure in Compose recomposition, BLE GATT state, "
+            "or process death recovery. "
+            "Example: 'Passing ViewModel instances down your Composable tree is not Clean Architecture. "
+            "It is the number one cause of untraceable recomposition loops in production apps.' "
+            "Follow with the specific Android mechanism (Compose compiler stability, "
+            "SavedStateHandle, GATT callback contract), then show the production fix pattern. "
+            "Structure: Bad pattern → what breaks at the OS/compiler level → production pattern → rule of thumb."
+        ),
     },
     {
-        "id": "CONTRARIAN_ENGINEERING",
-        "name": "Contrarian / Anti-Pattern Callout",
+        "id": "SCALE_INCIDENT_WAR_STORY",
+        "name": "Scale Incident & Debugging War Story (50M+ Users)",
+        "template_hint": "process_infographic_dark.html.j2",
         "instruction": (
-            "Challenge a widely accepted developer habit or popular library shortcut with a concrete architectural reason. "
-            "Example: 'Passing deep ViewModel instances down your Jetpack Compose tree isn't Clean Architecture—it breaks composable previews and causes untraceable recomposition loops.' "
-            "or 'Bypassing Activity recreation with configChanges on foldables is usually technical debt in disguise.'"
-        )
+            "Open with a production-scale constraint or metric that most developers never encounter. "
+            "Do NOT open with a time anchor or personal confession opener. "
+            "Start directly with the production number or system constraint: "
+            "Example: 'At 50 million users, a 0.05% crash rate means 25,000 broken sessions every week.' "
+            "or 'Android's 1MB Binder transaction buffer is shared across your entire app process. "
+            "Send one heavy Bitmap through an Intent, and you get TransactionTooLargeException.' "
+            "Then walk through: the symptom → the Android OS mechanism causing it "
+            "(Binder IPC, LMK oom_adj_score, GC compaction, main thread starvation) → "
+            "the production engineering fix → the measurable outcome. "
+            "All metrics must be realistic and grounded in real Android SDK constraints."
+        ),
     },
     {
-        "id": "HARD_NUMBERS_SCALE",
-        "name": "Scale & Telemetry Metric",
+        "id": "OS_INTERNALS_DEEP_DIVE",
+        "name": "Under-the-Hood / OS Internals Deep Dive",
+        "template_hint": "process_infographic_dark.html.j2",
         "instruction": (
-            "Start with a realistic production metric or constraint encountered at scale. "
-            "Example: 'The 1MB Binder transaction buffer is shared across your entire app process. Send one heavy Bitmap or serialized list through an Intent, and you get a TransactionTooLargeException.' "
-            "or 'At 50M+ users, a 0.1% ANR rate still means 50,000 frozen user sessions.'"
-        )
+            "Open by naming a specific Android OS or Linux kernel mechanism that senior developers "
+            "know exists but rarely inspect in depth. "
+            "Do NOT start with a story or time anchor. "
+            "Jump straight into the OS reality: "
+            "Example: 'Android's Low Memory Killer doesn't throw OutOfMemoryError. "
+            "It silently sends SIGKILL to cached background processes based on oom_adj_score.' "
+            "or 'Jetpack WindowManager uses a reactive Kotlin Flow for FoldingFeature "
+            "hinge posture — not a callback — because posture is a continuous hardware signal, not an event.' "
+            "Explain exactly what happens at the OS/kernel/ART/hardware layer "
+            "(FusedLocation batching windows, Choreographer VSYNC, ART GC compaction, "
+            "Binder thread pool exhaustion) and what it means for production app behavior."
+        ),
     },
     {
-        "id": "ARCHITECTURE_TRADE_OFF",
-        "name": "Direct Architecture Trade-off / Decision",
+        "id": "CONTRARIAN_ARCHITECTURE_CALLOUT",
+        "name": "Contrarian Architecture Callout / Anti-Pattern Bust",
+        "template_hint": "code_card_dark.html.j2",
         "instruction": (
-            "Open with a direct architectural choice between two patterns, highlighting the trade-off. "
-            "Example: 'MVI vs MVVM in Jetpack Compose: The moment your screen needs single-shot events (navigation, snackbars), a single StateFlow will eventually betray you without a dedicated event channel.' "
-            "or 'ExoPlayer's default 50-second buffer is great for home WiFi, but on mobile cellular networks, it's an OutOfMemory waiting to happen.'"
-        )
+            "Open by directly challenging a widely accepted Android development practice. "
+            "Do NOT use 'Unpopular opinion:' or 'Hot take:' as openers — just state the contrarian claim directly. "
+            "Example: 'Creating a dedicated UseCase class for every single repository method "
+            "is one of the biggest productivity drains in modern Android engineering.' "
+            "or 'Suppressing configuration changes with android:configChanges on foldables "
+            "is technical debt that breaks Jetpack WindowManager reactive posture detection.' "
+            "Then give the architectural reason with real API names: what Dagger/Hilt does with the graph, "
+            "what the Compose compiler stability classifier marks, what the GATT native stack serializes. "
+            "End with a concrete pragmatic rule that names the real class or pattern to use instead."
+        ),
     },
     {
-        "id": "UNDER_THE_HOOD",
-        "name": "Under-the-Hood Android OS Internals",
+        "id": "HARDWARE_LOW_LEVEL_DEEP_DIVE",
+        "name": "Hardware & Low-Level Protocol Deep Dive",
+        "template_hint": "process_infographic_dark.html.j2",
         "instruction": (
-            "Explain an Android OS / Linux kernel mechanism that developers overlook. "
-            "Example: 'Android's Low Memory Killer doesn't throw an OutOfMemoryError. It silently issues a SIGKILL to your background cached processes based on oom_adj_score.' "
-            "or 'Why Jetpack WindowManager uses a reactive Kotlin Flow instead of a standard callback for hinge posture detection.'"
-        )
+            "Open by naming the specific error code, hardware constraint, or protocol layer rule "
+            "that defines the problem. "
+            "Do NOT start with a time anchor or personal story. "
+            "Jump straight to the protocol or hardware truth: "
+            "Example: 'GATT status 133 is Android's catch-all BLE connection failure code. "
+            "Nine out of ten times, it is caused by calling gatt.connect() "
+            "before the BluetoothGatt native stack has closed the previous handle.' "
+            "or 'ExoPlayer's DefaultLoadControl has a 50-second max buffer by default. "
+            "On mobile cellular networks, this is an OutOfMemoryError waiting to happen "
+            "because MediaCodec allocates hardware-backed DRM secure buffers per keyframe.' "
+            "Walk through: the hardware/protocol constraint → the Android SDK behavior that exposes it → "
+            "the production engineering fix (MTU negotiation, GATT queue serialization via Mutex Channel, "
+            "custom LoadControl thresholds, BLE connection state machine, HLS segment prefetch limits)."
+        ),
     },
-    {
-        "id": "DEBUGGING_WAR_STORY",
-        "name": "Grounded Debugging Insight",
-        "instruction": (
-            "Start in the middle of a hard-to-trace bug without fake storytelling or dramatic dates. "
-            "Example: 'We spent hours debugging a memory leak in a Compose list, only to find the root cause was an unstable lambdas capturing an outer class reference.' "
-            "or 'If your BLE peripheral disconnects after exactly 30 seconds, your MTU request was never completed.'"
-        )
-    },
-    {
-        "id": "TOOLING_VS_REALITY",
-        "name": "Tooling vs Production Reality",
-        "instruction": (
-            "Highlight the gap between Android Studio emulators/profilers and physical devices in the wild. "
-            "Example: 'Your app might run at a smooth 60fps on a Pixel emulator, but low-end OEM chipsets handle thread scheduling and hardware bitmap allocation completely differently.'"
-        )
-    },
-    {
-        "id": "PRAGMATIC_HOW_TO",
-        "name": "Pragmatic Architecture Rule of Thumb",
-        "instruction": (
-            "Start with a definitive rule of thumb learned from building large Android codebases. "
-            "Example: 'Rule of thumb for multi-module Gradle setups: if feature-A needs a data model from feature-B, you don't add a dependency—you extract a core-model module.' "
-        )
-    }
 ]
 
+
 def select_hook_formula(day_of_year: int = 0, slot_index: int = 0) -> dict:
-    """Select a diverse hook style based on hash or random rotation to guarantee variety."""
-    idx = (day_of_year + slot_index + random.randint(0, len(HOOK_STYLES) - 1)) % len(HOOK_STYLES)
+    """
+    Select a diverse archetype based on hash + random rotation to guarantee variety.
+    Returns the full archetype dict including template_hint.
+    """
+    idx = (day_of_year * 3 + slot_index + random.randint(0, len(HOOK_STYLES) - 1)) % len(HOOK_STYLES)
     return HOOK_STYLES[idx]
+
+
+def get_archetype_by_id(archetype_id: str) -> dict:
+    """Retrieve a specific archetype by its ID string."""
+    for style in HOOK_STYLES:
+        if style["id"] == archetype_id:
+            return style
+    return HOOK_STYLES[0]

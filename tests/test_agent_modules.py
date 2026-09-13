@@ -99,6 +99,24 @@ class TestImageDecisionAgent(unittest.TestCase):
         needs_image, _ = self.agent.should_generate_image(topic, text)
         self.assertFalse(needs_image)
 
+    def test_theme_routing_dark_and_light(self):
+        topic_arch = "BLE GATT Queueing and Status 133"
+        text_arch = "Serialization of BluetoothGatt.writeCharacteristic calls using Mutex."
+        needs_img, _, tpl_dark = self.agent.decide(topic_arch, text_arch, theme="dark")
+        self.assertTrue(needs_img)
+        self.assertEqual(tpl_dark, "process_infographic_dark.html.j2")
+
+        _, _, tpl_light = self.agent.decide(topic_arch, text_arch, theme="light")
+        self.assertEqual(tpl_light, "process_infographic_light.html.j2")
+
+        topic_code = "Jetpack Compose Recomposition Loop in ViewModel"
+        text_code = "Anti-pattern of passing ViewModel directly into Composable vs state hoisting."
+        _, _, code_dark = self.agent.decide(topic_code, text_code, archetype_id="CODE_AUTOPSY_TEARDOWN", theme="dark")
+        self.assertEqual(code_dark, "code_card_dark.html.j2")
+
+        _, _, code_light = self.agent.decide(topic_code, text_code, archetype_id="CODE_AUTOPSY_TEARDOWN", theme="light")
+        self.assertEqual(code_light, "code_card_light.html.j2")
+
 
 class TestTelegramNotifier(unittest.TestCase):
     def test_unconfigured_notifier_does_not_crash(self):

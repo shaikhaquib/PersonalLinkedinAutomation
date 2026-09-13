@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; overflow: hidden; }
+
+  :root {
+    --paper:    #0b0e16;
+    --panel:    #161a24;
+    --codebg:   #0d1117;
+    --ink:      #f4f5f7;
+    --accent:   #a78bfa;  /* violet — primary accent */
+    --cyan:     #22d3ee;  /* cyan — secondary accent */
+    --slate:    #9aa3b4;
+    --line:     rgba(255,255,255,0.08);
+  }
+
+  .page {
+    width: 1080px; min-height: 1410px;
+    background: var(--paper);
+    position: relative; overflow: hidden;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .page::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(167,139,250,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(167,139,250,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .content { position: absolute; left: 64px; top: 0; right: 64px; bottom: 0; }
+
+  /* ── HARDCODED ATTRIBUTION EYEBROW ── */
+  .eyebrow {
+    position: absolute; left: 0; top: 36px; display: flex; align-items: center; gap: 9px;
+    background: rgba(167,139,250,0.08); border: 2px solid var(--accent); border-radius: 999px;
+    padding: 8px 20px 8px 16px; width: fit-content;
+  }
+  .eyebrow-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 10px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .eyebrow span {
+    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 16px;
+    color: var(--accent); letter-spacing: 0.4px;
+  }
+  .corner-mark {
+    position: absolute; right: 0; top: 32px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 19px;
+    color: #0d1117; background: var(--accent); border-radius: 10px;
+    padding: 9px 14px;
+  }
+
+  /* ── title block ── */
+  .title-block { position: absolute; left: 0; top: 90px; width: 820px; }
+  .h-line {
+    font-family: 'Archivo Black', 'Space Grotesk', sans-serif; font-weight: 400; font-size: 56px;
+    line-height: 1.1; letter-spacing: -0.5px;
+  }
+  .h-line.l1 { color: var(--ink); }
+  .h-line.l2 { color: var(--accent); text-shadow: 0 0 28px rgba(167,139,250,0.4); }
+  .tagline {
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 21px;
+    color: var(--slate); margin-top: 12px;
+  }
+
+  .hr { position: absolute; left: 0; width: 952px; height: 1px; background: var(--line); }
+
+  /* ── section rule ── */
+  .section-rule { position: absolute; left: 0; width: 952px; display: flex; align-items: center; gap: 16px; }
+  .section-rule .rule-line { flex: 1; height: 2px; background: var(--accent); opacity: 0.3; }
+  .section-rule .rule-text {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px;
+    letter-spacing: 2px; color: var(--accent); white-space: nowrap;
+  }
+
+  /* ── code window ── */
+  .code-window {
+    position: absolute; left: 0; width: 952px;
+    background: var(--codebg); border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    overflow: hidden;
+  }
+  .code-window .cw-titlebar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 18px; background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .cw-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .cw-dot.r { background: var(--accent); }
+  .cw-dot.y { background: var(--slate); }
+  .cw-dot.g { background: var(--cyan); }
+  .cw-filename {
+    font-family: 'JetBrains Mono', monospace; font-size: 14px;
+    color: var(--slate); margin-left: 8px;
+  }
+  .cw-badge {
+    margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    font-weight: 700; padding: 3px 10px; border-radius: 999px; letter-spacing: 0.5px;
+  }
+  .cw-badge.bad { background: rgba(167,139,250,0.12); color: var(--accent); border: 1px solid rgba(167,139,250,0.3); }
+  .cw-badge.good { background: rgba(34,211,238,0.12); color: var(--cyan); border: 1px solid rgba(34,211,238,0.3); }
+  .code-body {
+    padding: 20px 22px;
+    font-family: 'JetBrains Mono', monospace; font-size: 16px; line-height: 1.7;
+    white-space: pre; overflow: hidden;
+  }
+
+  /* Kotlin syntax token colors */
+  .kw  { color: var(--cyan); }      /* keywords */
+  .fn  { color: var(--accent); }    /* function/class names */
+  .str { color: var(--cyan); }      /* string literals */
+  .cm  { color: #6b7a99; }          /* comments */
+  .num { color: var(--cyan); }      /* numbers */
+  .def { color: var(--ink); }       /* default text */
+  .an  { color: var(--accent); }    /* annotations */
+  .err { color: var(--accent); }    /* error / bad pattern highlight */
+  .ok  { color: var(--cyan); }      /* good pattern highlight */
+
+  /* ── label bar between two code windows ── */
+  .vs-bar {
+    position: absolute; left: 0; width: 952px;
+    display: flex; align-items: center; gap: 0;
+  }
+  .vs-label {
+    flex: 1; text-align: center; font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 13px; letter-spacing: 2px; padding: 10px 0;
+    border-radius: 8px;
+  }
+  .vs-label.bad-label { color: var(--accent); background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.2); margin-right: 8px; }
+  .vs-label.good-label { color: var(--cyan); background: rgba(34,211,238,0.06); border: 1px solid rgba(34,211,238,0.2); }
+
+  /* ── key rule callout cards ── */
+  .rule-card {
+    position: absolute; border-radius: 14px;
+    background: var(--panel); border: 1px solid var(--line); padding: 18px 20px 16px;
+  }
+  .rule-card .rc-label {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px;
+    letter-spacing: 1px; margin-bottom: 8px;
+  }
+  .rule-card .rc-rule {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px;
+    color: var(--ink); line-height: 1.3; margin-bottom: 10px;
+  }
+  .rule-card .rc-pts { list-style: none; }
+  .rule-card .rc-pts li {
+    font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px;
+    color: #ced3dc; line-height: 1.5; padding-left: 20px; position: relative; margin-bottom: 4px;
+  }
+  .rule-card .rc-pts li::before { content: "→"; position: absolute; left: 0; color: var(--c); font-weight: 700; }
+  .rule-card.rc1 { --c: var(--accent); }
+  .rule-card.rc2 { --c: var(--cyan); }
+  .rule-card.rc3 { --c: var(--accent); }
+
+  /* ── insight strip ── */
+  .insight-strip {
+    position: absolute; left: 0; width: 952px;
+    background: linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(167,139,250,0.03) 100%);
+    border: 1px solid rgba(167,139,250,0.25); border-radius: 14px;
+    padding: 20px 26px; display: flex; align-items: flex-start; gap: 16px;
+  }
+  .insight-icon {
+    flex-shrink: 0; width: 38px; height: 38px; border-radius: 9px;
+    background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 17px; color: var(--accent); font-weight: 700;
+  }
+  .insight-label {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px;
+    letter-spacing: 1.5px; color: var(--accent); margin-bottom: 6px;
+  }
+  .insight-text {
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 19px;
+    color: var(--ink); line-height: 1.5;
+  }
+
+  /* ── HARDCODED FOOTER ── */
+  .footer {
+    position: absolute; left: 0; width: 952px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-top: 1px solid var(--line); padding-top: 16px;
+  }
+  .footer-author { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink); }
+  .footer-handle { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 15px; color: var(--slate); }
+  .footer-domain { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="content">
+
+    <!-- HARDCODED ATTRIBUTION — never a template variable -->
+    <div class="eyebrow"><div class="eyebrow-dot"></div><span>AQUIB SHAIKH // MOBILE ARCHITECTURE &amp; ANDROID INTERNALS</span></div>
+    <div class="corner-mark">&lt;/&gt;</div>
+
+    <div class="title-block">
+      <div id="h1" class="h-line l1">{{ title_line1 }}</div>
+      <div id="h2" class="h-line l2">{{ title_line2 }}</div>
+      <div class="tagline">{{ tagline }}</div>
+    </div>
+
+    <div class="hr" id="hr1"></div>
+
+    <div class="section-rule" id="sectionRule">
+      <span class="rule-line"></span><span class="rule-text">{{ section_label }}</span><span class="rule-line"></span>
+    </div>
+
+    <!-- Bad Pattern Code Window -->
+    <div class="code-window" id="codeWindowBad">
+      <div class="cw-titlebar">
+        <div class="cw-dot r"></div><div class="cw-dot y"></div><div class="cw-dot g"></div>
+        <span class="cw-filename">AntiPattern.kt</span>
+        <span class="cw-badge bad">❌  ANTI-PATTERN</span>
+      </div>
+      <div class="code-body" id="codeBad"><span class="cm">// Common mistake — avoid in production</span>
+<span class="an">@Composable</span>
+<span class="kw">fun </span><span class="fn">{{ steps[0].label }}</span><span class="def">(</span>
+<span class="def">    viewModel: </span><span class="err">{{ steps[0].points[0] }}</span>
+<span class="def">) {</span>
+<span class="def">    </span><span class="kw">val </span><span class="def">state </span><span class="kw">by </span><span class="fn">viewModel</span><span class="def">.uiState</span>
+<span class="def">    </span><span class="cm">// {{ steps[0].points[1] }}</span>
+<span class="def">    </span><span class="fn">{{ steps[0].points[2] }}</span><span class="def">()</span>
+<span class="def">}</span></div>
+    </div>
+
+    <!-- VS bar -->
+    <div class="vs-bar" id="vsBar">
+      <div class="vs-label bad-label">BEFORE — ANTI-PATTERN</div>
+      <div class="vs-label good-label">AFTER — PRODUCTION FIX</div>
+    </div>
+
+    <!-- Good Pattern Code Window -->
+    <div class="code-window" id="codeWindowGood">
+      <div class="cw-titlebar">
+        <div class="cw-dot r"></div><div class="cw-dot y"></div><div class="cw-dot g"></div>
+        <span class="cw-filename">ProductionFix.kt</span>
+        <span class="cw-badge good">✓  PRODUCTION PATTERN</span>
+      </div>
+      <div class="code-body" id="codeGood"><span class="cm">// State hoisted — Composable is a pure render function</span>
+<span class="an">@Composable</span>
+<span class="kw">fun </span><span class="fn">{{ steps[1].label }}</span><span class="def">(</span>
+<span class="def">    state: </span><span class="ok">{{ steps[1].points[0] }}</span><span class="def">,</span>
+<span class="def">    onAction: </span><span class="ok">{{ steps[1].points[1] }}</span>
+<span class="def">) {</span>
+<span class="def">    </span><span class="cm">// {{ steps[1].points[2] }}</span>
+<span class="def">}</span></div>
+    </div>
+
+    <!-- 3 rule callout cards -->
+    <div class="rule-card rc1" id="rcard0" style="left:0;width:300px">
+      <div class="rc-label" style="color:var(--accent)">WHY IT BREAKS</div>
+      <div class="rc-rule">{{ steps[2].label }}</div>
+      <ul class="rc-pts">{% for p in steps[2].points %}<li>{{ p }}</li>{% endfor %}</ul>
+    </div>
+    <div class="rule-card rc2" id="rcard1" style="left:326px;width:300px">
+      <div class="rc-label" style="color:var(--cyan)">THE FIX</div>
+      <div class="rc-rule">{{ steps[3].label }}</div>
+      <ul class="rc-pts">{% for p in steps[3].points %}<li>{{ p }}</li>{% endfor %}</ul>
+    </div>
+    <div class="rule-card rc3" id="rcard2" style="left:652px;width:300px">
+      <div class="rc-label" style="color:var(--accent)">RULE OF THUMB</div>
+      <div class="rc-rule">{{ flow_b_items | join(" → ") }}</div>
+      <ul class="rc-pts">
+        {% for item in flow_a_items %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+    </div>
+
+    <!-- Key Insight Strip (replaces sticky note) -->
+    <div class="insight-strip" id="insightStrip">
+      <div class="insight-icon">⚡</div>
+      <div>
+        <div class="insight-label">KEY INSIGHT</div>
+        <div class="insight-text">{{ hook }}</div>
+      </div>
+    </div>
+
+    <!-- HARDCODED FOOTER — never a template variable -->
+    <div class="footer" id="footer">
+      <div>
+        <div class="footer-author">Aquib Rashid Shaikh</div>
+        <div class="footer-handle">Senior Android Developer &amp; Mobile Tech Lead</div>
+      </div>
+      <div class="footer-domain">Android Architecture • Kotlin • BLE • OTT • FinTech</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+window._infoDone = false;
+
+window.drawInfographic = function() {
+  if (window._infoDone) return;
+  window._infoDone = true;
+
+  var content = document.querySelector('.content');
+  var cr = content.getBoundingClientRect();
+
+  // Shrink titles
+  ['h1','h2'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var sz = parseFloat(getComputedStyle(el).fontSize);
+    while (el.scrollWidth > 800 && sz > 28) { sz -= 2; el.style.fontSize = sz + 'px'; }
+  });
+
+  var titleBlock = document.querySelector('.title-block');
+  var titleBottom = titleBlock.getBoundingClientRect().bottom - cr.top;
+
+  var hr1 = document.getElementById('hr1');
+  hr1.style.top = (titleBottom + 22) + 'px';
+
+  var sectionRule = document.getElementById('sectionRule');
+  var ruleTop = titleBottom + 22 + 28;
+  sectionRule.style.top = ruleTop + 'px';
+  var ruleH = sectionRule.getBoundingClientRect().height;
+
+  // Bad code window
+  var badTop = ruleTop + ruleH + 28;
+  var codeWindowBad = document.getElementById('codeWindowBad');
+  codeWindowBad.style.top = badTop + 'px';
+  var badH = codeWindowBad.getBoundingClientRect().height;
+
+  // VS bar
+  var vsBar = document.getElementById('vsBar');
+  var vsTop = badTop + badH + 16;
+  vsBar.style.top = vsTop + 'px';
+  var vsH = vsBar.getBoundingClientRect().height;
+
+  // Good code window
+  var goodTop = vsTop + vsH + 16;
+  var codeWindowGood = document.getElementById('codeWindowGood');
+  codeWindowGood.style.top = goodTop + 'px';
+  var goodH = codeWindowGood.getBoundingClientRect().height;
+
+  // Rule cards
+  var rcardsTop = goodTop + goodH + 36;
+  ['rcard0','rcard1','rcard2'].forEach(function(id) {
+    var el = document.getElementById(id);
+    el.style.top = rcardsTop + 'px';
+  });
+  var rH = Math.max(
+    document.getElementById('rcard0').getBoundingClientRect().height,
+    document.getElementById('rcard1').getBoundingClientRect().height,
+    document.getElementById('rcard2').getBoundingClientRect().height
+  );
+
+  // Insight strip
+  var insightTop = rcardsTop + rH + 28;
+  var insightStrip = document.getElementById('insightStrip');
+  insightStrip.style.top = insightTop + 'px';
+  var insightH = insightStrip.getBoundingClientRect().height;
+
+  // Footer
+  var footer = document.getElementById('footer');
+  var footerTop = insightTop + insightH + 36;
+  footer.style.top = footerTop + 'px';
+
+  // ── Phase 2.8: Dynamically adjust .page height to prevent bottom cropping ──
+  var footerBottom = footerTop + footer.getBoundingClientRect().height;
+  var totalNeeded = Math.ceil(footerBottom + 40);
+  var minH = 1410;
+  var finalH = Math.max(minH, Math.min(1850, totalNeeded));
+  document.querySelector('.page').style.height = finalH + 'px';
+};
+
+document.fonts.ready.then(function() { window.drawInfographic(); });
+</script>
+</body>
+</html>

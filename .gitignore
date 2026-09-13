@@ -1,7 +1,20 @@
+# Environment and Secret Configurations
 .env
-.venv/
+*.env
+.env.*
+!.env.example
+
+# Python cache & virtual environments
 __pycache__/
 *.pyc
+.venv/
+env/
+venv/
+
+# System and logs
 .DS_Store
+*.log
+
+# Infographic output artifacts
 renderer/output/*.png
 renderer/output/_tmp.html

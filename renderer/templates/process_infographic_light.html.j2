@@ -8,15 +8,21 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { width: 1080px; overflow: hidden; }
 
+  /* ── Phase 2.7 & 2.9: Strict 2-Accent Palette (Light Theme Variant) ──
+     Background : off-white/light gray #f7f8fa
+     Surface    : pure white #ffffff with subtle line border + soft drop shadow
+     Accent 1   : violet #7c3aed (darkened for high contrast on light bg >= 4.5:1)
+     Accent 2   : cyan #0891b2 (darkened for high contrast on light bg >= 4.5:1)
+     Text       : deep charcoal #111827 (15.8:1 contrast ratio)
+  ────────────────────────────────────────────────────────────────────────── */
   :root {
-    --paper:   #0b0e16;  /* near-black navy page bg */
-    --panel:   #161a24;  /* raised-panel surface */
-    --panel2:  #1d2231;  /* slightly lighter panel for alternating depth */
-    --ink:     #f4f5f7;  /* primary text — off-white */
-    --accent:  #a78bfa;  /* bright violet — primary accent */
-    --cyan:    #22d3ee;  /* vibrant cyan — secondary accent (replaces emerald and amber) */
-    --slate:   #9aa3b4;  /* secondary text */
-    --line:    rgba(255,255,255,0.08);
+    --paper:   #f7f8fa;  /* off-white page background */
+    --panel:   #ffffff;  /* card surface */
+    --ink:     #111827;  /* primary text — deep charcoal */
+    --accent:  #7c3aed;  /* high-contrast violet — primary accent */
+    --cyan:    #0891b2;  /* high-contrast cyan — secondary accent */
+    --slate:   #4b5563;  /* secondary text (6.8:1 contrast) */
+    --line:    rgba(0,0,0,0.08);
     --codebg:  #0d1117;  /* code block background */
   }
 
@@ -32,8 +38,8 @@
     content: '';
     position: absolute; inset: 0;
     background-image:
-      linear-gradient(rgba(167,139,250,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(167,139,250,0.03) 1px, transparent 1px);
+      linear-gradient(rgba(124,58,237,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,0.035) 1px, transparent 1px);
     background-size: 40px 40px;
     pointer-events: none;
   }
@@ -43,10 +49,14 @@
   /* ── HARDCODED ATTRIBUTION EYEBROW (D1/D6 fix) ── */
   .eyebrow {
     position: absolute; left: 0; top: 36px; display: flex; align-items: center; gap: 9px;
-    background: rgba(167,139,250,0.08); border: 2px solid var(--accent); border-radius: 999px;
+    background: rgba(124,58,237,0.08); border: 2px solid var(--accent); border-radius: 999px;
     padding: 8px 20px 8px 16px; width: fit-content;
   }
-  .eyebrow-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse 2s ease-in-out infinite; }
+  .eyebrow-dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 8px rgba(124,58,237,0.5);
+    animation: pulse 2s ease-in-out infinite;
+  }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
   .eyebrow span {
     font-family: 'Inter', sans-serif; font-weight: 800; font-size: 16px;
@@ -55,160 +65,148 @@
   .corner-mark {
     position: absolute; right: 0; top: 32px;
     font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 19px;
-    color: #0d1117; background: var(--accent); border-radius: 10px;
-    padding: 9px 14px;
+    color: #ffffff; background: var(--accent); border-radius: 10px;
+    padding: 9px 14px; box-shadow: 0 2px 8px rgba(124,58,237,0.3);
   }
 
-  /* ── title ── */
+  /* ── title block ── */
   .title-block { position: absolute; left: 0; top: 90px; width: 820px; }
   .h-line {
-    font-family: 'Archivo Black', 'Space Grotesk', sans-serif; font-weight: 400; font-size: 60px;
-    line-height: 1.08; letter-spacing: -0.5px;
+    font-family: 'Archivo Black', 'Space Grotesk', sans-serif; font-weight: 400; font-size: 56px;
+    line-height: 1.1; letter-spacing: -0.5px;
   }
   .h-line.l1 { color: var(--ink); }
-  .h-line.l2 { color: var(--accent); text-shadow: 0 0 28px rgba(167,139,250,0.4); }
+  .h-line.l2 { color: var(--accent); }
   .tagline {
-    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 22px;
-    color: var(--slate); margin-top: 14px;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 21px;
+    color: var(--slate); margin-top: 12px;
   }
 
   .hr { position: absolute; left: 0; width: 952px; height: 1px; background: var(--line); }
 
-  /* ── section label ── */
+  /* ── section rule ── */
   .section-rule { position: absolute; left: 0; width: 952px; display: flex; align-items: center; gap: 16px; }
-  .section-rule .rule-line { flex: 1; height: 2px; background: var(--accent); opacity: 0.3; }
+  .section-rule .rule-line { flex: 1; height: 2px; background: var(--accent); opacity: 0.35; }
   .section-rule .rule-text {
     font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px;
     letter-spacing: 2px; color: var(--accent); white-space: nowrap;
   }
 
-  /* ── state flow row ── */
-  .flow-stage {
-    position: absolute;
-    display: flex; flex-direction: column; align-items: center;
-  }
+  /* ── 3 flow stages (top arc) ── */
+  .flow-stage { position: absolute; }
   .flow-stage .stage-label {
-    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px;
-    margin-bottom: 10px; text-align: center;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px;
+    letter-spacing: 1.5px; margin-bottom: 8px;
   }
   .flow-node {
-    width: 100%; border-radius: 14px;
-    padding: 16px 14px; border: 2px solid var(--c);
-    background: linear-gradient(135deg, var(--panel) 0%, var(--panel2) 100%);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.02) inset,
-                0 0 20px -8px var(--c);
-    position: relative; overflow: hidden;
-  }
-  .flow-node::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: var(--c); border-radius: 14px 14px 0 0;
+    background: var(--panel); border-radius: 14px;
+    border: 1px solid var(--line); border-left: 4px solid var(--c);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03);
+    padding: 16px 18px 14px; position: relative;
   }
   .flow-node .node-icon {
-    font-family: 'JetBrains Mono', monospace; font-size: 13px;
-    color: var(--c); opacity: 0.7; margin-bottom: 6px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+    color: var(--c); letter-spacing: 1px; margin-bottom: 6px;
   }
   .flow-node .node-code {
-    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 17px;
-    color: var(--c); line-height: 1.4;
-    word-break: break-all;
+    font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600;
+    color: var(--ink); background: rgba(0,0,0,0.04);
+    border: 1px solid var(--line); border-radius: 7px;
+    padding: 6px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  .connector-svg {
-    position: absolute;
-    pointer-events: none; overflow: visible;
-  }
-
-  /* ── technical breakdown cards (replacing generic checkmark grid) ── */
+  /* ── 2x2 technical breakdown cards ── */
   .breakdown-card {
-    position: absolute; border-radius: 16px;
-    background: var(--panel2); border: 1px solid var(--line);
-    padding: 20px 22px 18px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    position: absolute; border-radius: 14px;
+    background: var(--panel); border: 1px solid var(--line);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03);
+    padding: 20px 22px 18px; border-top: 3px solid var(--c);
   }
   .breakdown-card .bc-number {
-    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px;
-    color: var(--c); letter-spacing: 1px; margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
+    letter-spacing: 1.5px; color: var(--c); margin-bottom: 4px;
   }
   .breakdown-card .bc-title {
-    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px;
-    color: var(--ink); margin-bottom: 12px; line-height: 1.2; letter-spacing: -0.1px;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 21px;
+    color: var(--ink); margin-bottom: 12px; line-height: 1.25;
   }
   .breakdown-card .bc-pts { list-style: none; }
   .breakdown-card .bc-pts li {
-    font-family: 'Inter', sans-serif; font-weight: 500; font-size: 17px;
-    color: #ced3dc; line-height: 1.55; padding-left: 22px; position: relative; margin-bottom: 5px;
+    font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px;
+    color: #374151; line-height: 1.5; padding-left: 20px; position: relative; margin-bottom: 6px;
   }
   .breakdown-card .bc-pts li::before {
-    content: "→"; position: absolute; left: 0;
-    color: var(--c); font-weight: 700;
+    content: "→"; position: absolute; left: 0; color: var(--c); font-weight: 700;
   }
-  .breakdown-card.bd1 { --c: var(--accent); }
-  .breakdown-card.bd2 { --c: var(--cyan); }
-  .breakdown-card.bd3 { --c: var(--accent); }
-  .breakdown-card.bd4 { --c: var(--cyan); }
 
-  /* ── insight strip (replaces flow strips + sticky) ── */
+  /* Phase 2.7: 2-accent alternating colors */
+  .bd1 { --c: var(--accent); }
+  .bd2 { --c: var(--cyan); }
+  .bd3 { --c: var(--accent); }
+  .bd4 { --c: var(--cyan); }
+
+  /* ── pipeline trace ── */
+  .pipeline-row {
+    position: absolute; left: 0; width: 952px;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .pipe-label {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px;
+    letter-spacing: 1.5px; color: var(--accent); flex-shrink: 0;
+  }
+  .pipe-chip {
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600;
+    color: #1e293b; background: rgba(0,0,0,0.04); border: 1px solid var(--line);
+    border-radius: 6px; padding: 4px 10px; white-space: nowrap;
+  }
+  .pipe-arrow { color: var(--cyan); font-weight: 700; font-size: 13px; }
+
+  /* ── insight strip ── */
   .insight-strip {
     position: absolute; left: 0; width: 952px;
-    background: linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(167,139,250,0.03) 100%);
-    border: 1px solid rgba(167,139,250,0.25); border-radius: 14px;
-    padding: 22px 28px; display: flex; align-items: flex-start; gap: 18px;
+    background: linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(124,58,237,0.02) 100%);
+    border: 1px solid rgba(124,58,237,0.25); border-radius: 14px;
+    padding: 18px 24px; display: flex; align-items: center; gap: 18px;
+    box-shadow: 0 2px 10px rgba(124,58,237,0.06);
   }
   .insight-icon {
     flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px;
-    background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.3);
+    background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3);
     display: flex; align-items: center; justify-content: center;
     font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--accent); font-weight: 700;
   }
-  .insight-content {}
+  .insight-content { flex: 1; }
   .insight-label {
-    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px;
-    letter-spacing: 1.5px; color: var(--accent); margin-bottom: 7px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px;
+    letter-spacing: 1.5px; color: var(--accent); margin-bottom: 4px;
   }
   .insight-text {
-    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 20px;
-    color: var(--ink); line-height: 1.5;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 19px;
+    color: var(--ink); line-height: 1.45;
   }
 
-  /* ── pipeline chips ── */
-  .pipeline-row {
-    position: absolute; left: 0; width: 952px;
-    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-  }
-  .pipe-label {
-    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px;
-    color: var(--slate); letter-spacing: 1px; white-space: nowrap; margin-right: 4px;
-  }
-  .pipe-chip {
-    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 14px; color: var(--ink);
-    border: 1.5px solid rgba(255,255,255,0.12); border-radius: 8px; background: var(--panel2);
-    padding: 6px 11px; white-space: nowrap;
-  }
-  .pipe-arrow { color: var(--slate); font-size: 14px; font-weight: 700; }
-
-  /* ── HARDCODED FOOTER (D2 fix) ── */
+  /* ── HARDCODED FOOTER ── */
   .footer {
     position: absolute; left: 0; width: 952px;
     display: flex; align-items: center; justify-content: space-between;
     border-top: 1px solid var(--line); padding-top: 16px;
   }
-  .footer-author {
-    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink);
-  }
-  .footer-handle {
-    font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 15px; color: var(--slate);
-  }
-  .footer-domain {
-    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px;
-    color: var(--accent); letter-spacing: 0.3px;
-  }
+  .footer-author { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink); }
+  .footer-handle { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 15px; color: var(--slate); }
+  .footer-domain { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--accent); }
+
+  /* ── connector arrows ── */
+  .connector-svg { position: absolute; pointer-events: none; }
 </style>
 </head>
 <body>
 <div class="page">
   <div class="content">
 
-    <!-- HARDCODED ATTRIBUTION — D1/D6 FIX: never a template variable -->
+    <!-- HARDCODED ATTRIBUTION — never a template variable -->
     <div class="eyebrow"><div class="eyebrow-dot"></div><span>AQUIB SHAIKH // MOBILE ARCHITECTURE &amp; ANDROID INTERNALS</span></div>
     <div class="corner-mark">&lt;/&gt;</div>
 
@@ -224,7 +222,7 @@
       <span class="rule-line"></span><span class="rule-text">{{ section_label }}</span><span class="rule-line"></span>
     </div>
 
-    <!-- State Flow: 3 nodes connected by SVG arrows (strictly alternating violet and cyan) -->
+    <!-- 3 Flow Stages (Top Arc) -->
     <div class="flow-stage" id="stage0" style="left:0px;width:286px">
       <div class="stage-label" style="color:var(--accent)">{{ stages[0].label }}</div>
       <div class="flow-node" style="--c:var(--accent)">
@@ -252,12 +250,12 @@
     <svg id="stage-arrows" class="connector-svg" style="left:0;top:0" width="952" height="600">
       <defs>
         <marker id="sarr" markerWidth="12" markerHeight="8" refX="9" refY="4" orient="auto">
-          <polygon points="0 0.5, 11 4, 0 7.5" fill="#22d3ee"/>
+          <polygon points="0 0.5, 11 4, 0 7.5" fill="#0891b2"/>
         </marker>
       </defs>
     </svg>
 
-    <!-- Technical Breakdown Cards: 2x2 grid (D-regress-1 fixed: clean 01-04 index badge, no duplicate title) -->
+    <!-- Technical Breakdown Cards: 2x2 grid -->
     <div class="breakdown-card bd1" id="card0" style="left:0px;width:460px">
       <div class="bc-number">01</div>
       <div class="bc-title">{{ steps[0].label }}</div>
@@ -279,13 +277,13 @@
       <ul class="bc-pts">{% for p in steps[3].points %}<li>{{ p }}</li>{% endfor %}</ul>
     </div>
 
-    <!-- Pipeline trace chips (replaces bottom flow strips) -->
+    <!-- Pipeline trace chips -->
     <div class="pipeline-row" id="pipeA">
       <span class="pipe-label">TRACE:</span>
       {% for item in flow_a_items %}<div class="pipe-chip">{{ item }}</div>{% if not loop.last %}<span class="pipe-arrow">→</span>{% endif %}{% endfor %}
     </div>
 
-    <!-- Key Insight / Takeaway strip (replaces sticky note — D3 fix) -->
+    <!-- Key Insight / Takeaway strip -->
     <div class="insight-strip" id="insightStrip">
       <div class="insight-icon">⚡</div>
       <div class="insight-content">
@@ -294,7 +292,7 @@
       </div>
     </div>
 
-    <!-- HARDCODED FOOTER (D2 fix) — never a template variable -->
+    <!-- HARDCODED FOOTER — never a template variable -->
     <div class="footer" id="footer">
       <div>
         <div class="footer-author">Aquib Rashid Shaikh</div>
@@ -367,7 +365,7 @@ window.drawInfographic = function() {
     var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', x1); line.setAttribute('y1', y1);
     line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-    line.setAttribute('stroke', '#a78bfa'); line.setAttribute('stroke-width', '2.5');
+    line.setAttribute('stroke', '#7c3aed'); line.setAttribute('stroke-width', '2.5');
     line.setAttribute('stroke-dasharray', '6 3');
     line.setAttribute('marker-end', 'url(#sarr)');
     svg.appendChild(line);
@@ -376,9 +374,6 @@ window.drawInfographic = function() {
   addArrow(s1.R + 8, s1.cy, s2.L - 8, s2.cy);
 
   // ── Position breakdown card grid ──
-  var stage0El = document.getElementById('stage0');
-  var s0Rect = stage0El.getBoundingClientRect();
-  // Find the max bottom across all 3 stages
   var maxStageBottom = Math.max(
     document.getElementById('stage0').getBoundingClientRect().bottom,
     document.getElementById('stage1').getBoundingClientRect().bottom,
