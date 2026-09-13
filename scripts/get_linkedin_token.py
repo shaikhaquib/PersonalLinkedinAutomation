@@ -59,13 +59,28 @@ class CallbackHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         global _auth_code, _got_state
         parsed = urllib.parse.urlparse(self.path)
+        if parsed.path.endswith("favicon.ico"):
+            self.send_response(204)
+            self.end_headers()
+            return
+
         params = urllib.parse.parse_qs(parsed.query)
-        _auth_code = params.get("code", [None])[0]
-        _got_state = params.get("state", [None])[0]
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html")
-        self.end_headers()
-        self.wfile.write(b"<h2>Done! You can close this tab and return to the terminal.</h2>")
+        incoming_code = params.get("code", [None])[0]
+        incoming_state = params.get("state", [None])[0]
+
+        if incoming_state == state and incoming_code:
+            _auth_code = incoming_code
+            _got_state = incoming_state
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"<h2>Authorization successful! You can close this tab and return to the terminal.</h2>")
+        else:
+            # Stale request or mismatched state
+            self.send_response(400)
+            self.send_header("Content-Type", "text/html")
+            self.end_headers()
+            self.wfile.write(b"<h2>Ignoring stale or invalid authorization session. Please use the newly opened tab.</h2>")
 
     def log_message(self, *args):
         pass  # silence request logs
@@ -102,7 +117,8 @@ else:
     print(f"  Callback listener started on port {listen_port}.")
     print("  Waiting for authorization redirect from your browser...")
     server = HTTPServer(("0.0.0.0", listen_port), CallbackHandler)
-    server.handle_request()  # Blocks until the browser redirect request arrives
+    while not _auth_code:
+        server.handle_request()
 
 if not _auth_code:
     sys.exit("ERROR: No authorization code received. Did you approve the app?")
