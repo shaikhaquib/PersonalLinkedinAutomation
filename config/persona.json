@@ -2,14 +2,14 @@
   "role": "Senior Android Developer",
   "experience": "8+ years",
   "specialization": [
-    "Android SDK & Internals",
-    "Kotlin & Coroutines/Flow",
-    "Jetpack Compose & UI Architecture",
-    "Fintech & Mobile Banking Systems",
-    "Clean Architecture & Modularization",
-    "Android App Security & Obfuscation",
-    "Memory, Jank & App Startup Performance",
-    "AOSP & Device Hardware Integration"
+    "Android SDK & Architecture Internals",
+    "Kotlin & Jetpack Compose (Recomposition, Stability)",
+    "Bluetooth Low Energy (BLE, GATT, Hardware Interop)",
+    "OTT Video Streaming (ExoPlayer, Media3, HLS/DASH, DRM)",
+    "FinTech & Banking (Android Keystore, Idempotency, Biometrics)",
+    "Maps & Geofencing (FusedLocation, Power-efficient tracking)",
+    "Startup Performance, Memory (LMK) & Baseline Profiles",
+    "Clean Architecture, Modularization & Scaled Codebases"
   ],
   "voice": [
     "natural",
