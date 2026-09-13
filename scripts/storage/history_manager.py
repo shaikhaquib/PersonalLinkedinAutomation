@@ -122,6 +122,15 @@ class HistoryManager:
                 if similarity >= 0.60:
                     return True, f"Title '{title}' is too similar to past post '{past_title}' (similarity: {similarity:.2f})."
 
+        # Check topics rejected today
+        today_start = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT topic FROM attempted_topics WHERE attempted_at LIKE ? AND decision = 'rejected_quality'", (f"{today_start}%",))
+            rejected_today = [r[0].strip().lower() for r in cursor.fetchall()]
+        if topic_clean in rejected_today:
+            return True, f"Topic '{topic}' was already attempted and rejected during quality review today."
+
         return False, ""
 
     def record_post(self, topic: str, title: str, content: str, linkedin_post_id: str, has_image: bool = False):

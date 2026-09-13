@@ -171,57 +171,58 @@ def run_agent(preview: bool = False, force_topic: str = None):
             {"title": "Eliminating JIT Stalls on App Startup with Baseline Profiles", "summary": "How AOT compilation reduces cold start times by 30% on production Android devices.", "source": "curated_fallback"}
         ]
 
-    # Step 3: Duplicate Filtering
-    print("\n[ Step 2 ] Checking duplicate history...")
+    # Step 3: Candidate Evaluation Loop
+    print("\n[ Step 2 ] Finding and evaluating suitable topic...")
+    writing_agent = WritingAgent(generate_text)
+    quality_reviewer = QualityReviewer(generate_text)
+    max_attempts = SETTINGS.get("max_review_attempts", 3)
+
+    passed_review = False
     selected_candidate = None
+    post_text = None
+    first_comment = None
+
     for cand in candidates:
         is_dup, reason = history.is_duplicate(cand["title"], cand["title"])
         if is_dup:
             print(f"  [Duplicate] Skipped '{cand['title']}': {reason}")
             history.record_topic_attempt(cand["title"], cand.get("overall_score", 0.7), "rejected_duplicate")
             continue
-        selected_candidate = cand
-        break
 
-    if not selected_candidate:
-        msg = "All candidate topics were rejected as duplicates or below threshold."
-        print(f"  [ERROR] {msg}")
-        return
+        topic = cand["title"]
+        source_context = f"{cand.get('summary', '')} (Source: {cand.get('source', 'Web')})"
+        print(f"\n  Attempting Topic: {topic}")
 
-    topic = selected_candidate["title"]
-    source_context = f"{selected_candidate.get('summary', '')} (Source: {selected_candidate.get('source', 'Web')})"
-    print(f"  Selected Topic: {topic}")
+        print("\n[ Step 3 ] Generating post draft with Senior Android Developer persona...")
+        post_text, first_comment = writing_agent.write_post(topic, source_context)
 
-    # Step 4: Draft Generation
-    print("\n[ Step 3 ] Generating post draft with Senior Android Developer persona...")
-    writing_agent = WritingAgent(generate_text)
-    post_text, first_comment = writing_agent.write_post(topic, source_context)
+        print("\n[ Step 4 ] Running Quality Review Agent...")
+        for attempt in range(1, max_attempts + 1):
+            eval_result = quality_reviewer.review(post_text, topic)
+            ta = eval_result.get("technical_accuracy", 0)
+            nat = eval_result.get("naturalness", 0)
+            ai_score = eval_result.get("ai_like_language", 0)
+            print(f"  Attempt {attempt}/{max_attempts} -> Technical: {ta}/10 | Naturalness: {nat}/10 | AI-Jargon: {ai_score}/10 | Passed: {eval_result.get('passed')}")
 
-    # Step 5: Quality Review Loop (Up to max_attempts)
-    print("\n[ Step 4 ] Running Quality Review Agent...")
-    quality_reviewer = QualityReviewer(generate_text)
-    max_attempts = SETTINGS.get("max_review_attempts", 3)
-    passed_review = False
+            if eval_result.get("passed"):
+                passed_review = True
+                selected_candidate = cand
+                break
 
-    for attempt in range(1, max_attempts + 1):
-        eval_result = quality_reviewer.review(post_text, topic)
-        ta = eval_result.get("technical_accuracy", 0)
-        nat = eval_result.get("naturalness", 0)
-        ai_score = eval_result.get("ai_like_language", 0)
-        print(f"  Attempt {attempt}/{max_attempts} -> Technical: {ta}/10 | Naturalness: {nat}/10 | AI-Jargon: {ai_score}/10 | Passed: {eval_result.get('passed')}")
+            if attempt < max_attempts:
+                feedback = eval_result.get("feedback", "Improve technical depth and eliminate marketing language.")
+                print(f"  [Rewrite] Rewriting draft based on reviewer feedback: {feedback}")
+                post_text, first_comment = writing_agent.write_post(topic, source_context, feedback=feedback)
 
-        if eval_result.get("passed"):
-            passed_review = True
+        if passed_review:
             break
 
-        if attempt < max_attempts:
-            feedback = eval_result.get("feedback", "Improve technical depth and eliminate marketing language.")
-            print(f"  [Rewrite] Rewriting draft based on reviewer feedback: {feedback}")
-            post_text, first_comment = writing_agent.write_post(topic, source_context, feedback=feedback)
+        print(f"  [QualityReview] Topic '{topic}' failed quality thresholds after maximum retries. Trying next candidate...")
+        history.record_topic_attempt(topic, cand.get("overall_score", 0.7), "rejected_quality")
 
-    if not passed_review:
-        print("  [QualityReview] Post failed quality thresholds after maximum retries. Skipping post.")
-        history.record_topic_attempt(topic, selected_candidate.get("overall_score", 0.7), "rejected_quality")
+    if not passed_review or not selected_candidate:
+        msg = "No candidates passed quality review and duplicate filtering."
+        print(f"  [ERROR] {msg}")
         return
 
     print("\n" + "─" * 60)
