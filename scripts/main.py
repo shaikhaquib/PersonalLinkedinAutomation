@@ -38,7 +38,7 @@ EURON_API_KEY = os.environ.get("EURON_API_KEY")
 LINKEDIN_ACCESS_TOKEN = os.environ.get("LINKEDIN_ACCESS_TOKEN")
 LINKEDIN_PERSON_ID = os.environ.get("LINKEDIN_PERSON_ID")
 
-GEMINI_MODELS = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-2.5-flash"]
+GEMINI_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"]
 
 # Load settings
 SETTINGS_PATH = os.path.join(PROJECT_ROOT, "config", "settings.json")
