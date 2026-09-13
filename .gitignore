@@ -17,4 +17,5 @@ venv/
 
 # Infographic output artifacts
 renderer/output/*.png
+!renderer/output/scheduled_*.png
 renderer/output/_tmp.html

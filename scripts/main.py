@@ -165,9 +165,33 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
         post_text = due_post["post_text"]
         first_comment = due_post.get("first_comment", "")
         archetype_id = due_post.get("archetype", "")
-        png_path = due_post.get("image_path")
+        raw_png = due_post.get("image_path")
         selected_template = due_post.get("template", "text-only")
-        needs_image = bool(png_path)
+        needs_image = bool(raw_png and selected_template != "text-only")
+        png_path = None
+        if needs_image and raw_png:
+            if not os.path.isabs(raw_png):
+                candidate = os.path.join(PROJECT_ROOT, raw_png)
+            else:
+                candidate = raw_png
+            if os.path.exists(candidate):
+                png_path = candidate
+            else:
+                # Portable fallback: check by filename in renderer/output
+                fname = os.path.basename(raw_png)
+                candidate_rel = os.path.join(PROJECT_ROOT, "renderer", "output", fname)
+                if os.path.exists(candidate_rel):
+                    png_path = candidate_rel
+                elif selected_template:
+                    try:
+                        import scripts.infographic as ig
+                        print(f"  [Notice] Pre-rendered image not found on disk ({raw_png}). Re-rendering dynamically...")
+                        content = ig.generate_process_content(topic, post_text, generate_text, template=selected_template)
+                        png_path = ig.render_infographic(content, candidate_rel, template=selected_template)
+                        print(f"  Dynamic render successful: {png_path}")
+                    except Exception as re_err:
+                        print(f"  [WARN] Dynamic render failed: {re_err}. Proceeding without image.")
+                        png_path = None
     else:
         # Step 2: Topic Discovery
         print("[ Step 1 ] Discovering candidate topics...")
