@@ -82,12 +82,12 @@ STRICT BANS — any post triggering these will be rejected by the Quality Review
 - NEVER invent fake metrics or company names. Use real ones from the knowledge base only.
 - BARE API NAME-DROPPING FORBIDDEN (Phase 4.6): Every bullet point (→) and claim in the post body must be a complete explanatory sentence of at least 6 words, naming the API and explaining the cause, effect, or mechanism with an active verb. Never output a bare class name, dotted method call, or SDK constant without full sentence structure.
 
-POST CLOSURE:
 - End with a genuine technical question to the engineering community.
 - DO NOT add a canned networking pitch ("I share insights on building...").
 - Add exactly 3-5 targeted hashtags on the last line:
   #AndroidDev #Kotlin #JetpackCompose #MobileArchitecture — pick the most relevant.
-- Target length: 900 to 1400 characters.
+- Target length: 650 to 950 characters (approx. 100 to 140 words, 4 to 5 concise paragraphs).
+- STRICT CONCISENESS: An infographic card accompanies the post. Do NOT write an essay. Do NOT repeat the same concept in multiple sentences. Keep it punchy, tight, and scannable on mobile screens.
 
 After the post, on a new line starting with "FIRST_COMMENT:", write a short 1-2 line
 technical seed comment from the author to stimulate peer debate — must include at least one
