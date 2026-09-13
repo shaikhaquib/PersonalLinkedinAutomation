@@ -166,9 +166,13 @@ def run_agent(preview: bool = False, force_topic: str = None):
     if not candidates:
         print("  [WARN] No RSS candidates met score threshold. Using curated Android topics fallback.")
         candidates = [
-            {"title": "Understanding Process Death & State Restoration in Jetpack Compose", "summary": "How Android LMK destroys processes in the background and why rememberSaveable is required.", "source": "curated_fallback"},
-            {"title": "Idempotency in Mobile Banking & Payment Transactions", "summary": "Preventing double charges over flaky mobile networks using client-side UUID tokens.", "source": "curated_fallback"},
-            {"title": "Eliminating JIT Stalls on App Startup with Baseline Profiles", "summary": "How AOT compilation reduces cold start times by 30% on production Android devices.", "source": "curated_fallback"}
+            {"title": "Understanding Process Death & State Restoration in Jetpack Compose", "summary": "How Android LMK destroys processes in the background and why rememberSaveable and DataStore are required.", "source": "curated_fallback"},
+            {"title": "Reliable BLE GATT Queueing and MTU Negotiation in Production Android", "summary": "Solving GATT status 133, connection serialization via Coroutines Channels, and MTU 517 byte negotiation.", "source": "curated_fallback"},
+            {"title": "Tuning ExoPlayer LoadControl Buffers for Low-Latency OTT Streaming", "summary": "Customizing DefaultLoadControl buffer thresholds and ABR track selection to prevent OOMs on mobile devices.", "source": "curated_fallback"},
+            {"title": "Architecting Battery-Efficient Geofencing with Android FusedLocation", "summary": "Balancing real-time proximity detection with Android 14 foreground service types and Doze mode restrictions.", "source": "curated_fallback"},
+            {"title": "Engineering an Enterprise Android Design System Published via Internal Maven", "summary": "Building unified UI component packages across multiple Android pods to reduce feature integration time.", "source": "curated_fallback"},
+            {"title": "Idempotency and Keystore Security in Mobile Banking Transactions", "summary": "Preventing double charges over flaky mobile networks with biometric prompts and client-side UUID tokens.", "source": "curated_fallback"},
+            {"title": "High-Performance JavaScript Bridge Architecture for Android WebViews", "summary": "Safely bridging web-hosted micro-frontends with native Android capabilities using native JS plugin architecture.", "source": "curated_fallback"}
         ]
 
     # Step 3: Candidate Evaluation Loop
