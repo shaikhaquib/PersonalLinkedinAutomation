@@ -145,6 +145,67 @@
   .bd3 { --c: var(--accent); }
   .bd4 { --c: var(--cyan); }
 
+  .bc-header-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  /* ── Phase 5.5a: Confidence Badges & Legend (Light Theme) ── */
+  .legend-bar {
+    position: absolute; left: 0; display: flex; align-items: center; gap: 12px;
+  }
+  .legend-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 14px; border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+  }
+  .legend-pill.confirmed {
+    background: rgba(8, 145, 178, 0.08); border: 1px solid rgba(8, 145, 178, 0.28); color: var(--cyan);
+  }
+  .legend-pill.analysis {
+    background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.28); color: var(--accent);
+  }
+  .lp-icon { font-size: 13px; font-weight: 900; }
+
+  .confidence-badge {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 6px; letter-spacing: 0.6px;
+    display: inline-flex; align-items: center; gap: 5px; text-transform: uppercase;
+  }
+  .badge-confirmed {
+    background: rgba(8, 145, 178, 0.1); color: var(--cyan); border: 1px solid rgba(8, 145, 178, 0.25);
+  }
+  .badge-analysis {
+    background: rgba(124, 58, 237, 0.1); color: var(--accent); border: 1px solid rgba(124, 58, 237, 0.25);
+  }
+
+  /* ── Phase 5.5c: Actionable Closing Block (Light Theme) ── */
+  .actionable-block {
+    position: absolute; left: 0; width: 952px;
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.06) 0%, rgba(124, 58, 237, 0.04) 100%);
+    border: 1px solid rgba(8, 145, 178, 0.22); border-radius: 14px;
+    padding: 20px 26px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  }
+  .ab-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .ab-icon {
+    font-size: 18px; color: var(--cyan);
+  }
+  .ab-title {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px;
+    letter-spacing: 1.5px; color: var(--cyan); text-transform: uppercase;
+  }
+  .ab-pts { list-style: none; }
+  .ab-pts li {
+    font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px;
+    color: var(--ink); line-height: 1.55; padding-left: 20px; position: relative; margin-bottom: 6px;
+  }
+  .ab-pts li:last-child { margin-bottom: 0; }
+  .ab-pts li::before {
+    content: "✓"; position: absolute; left: 0; color: var(--cyan); font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  }
+
   /* ── pipeline trace ── */
   .pipeline-row {
     position: absolute; left: 0; width: 952px;
@@ -194,9 +255,16 @@
     display: flex; align-items: center; justify-content: space-between;
     border-top: 1px solid var(--line); padding-top: 16px;
   }
-  .footer-author { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink); }
-  .footer-handle { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 15px; color: var(--slate); }
-  .footer-domain { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--accent); }
+  .footer-author { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 19px; color: var(--ink); }
+  .footer-handle { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 14px; color: var(--slate); margin-top: 2px; }
+  .footer-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .footer-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11px;
+    color: var(--cyan); background: rgba(34, 211, 238, 0.08); border: 1px solid rgba(34, 211, 238, 0.28);
+    padding: 3px 10px; border-radius: 6px; letter-spacing: 0.5px;
+  }
+  .footer-domain { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--accent); letter-spacing: 0.3px; }
 
   /* ── connector arrows ── */
   .connector-svg { position: absolute; pointer-events: none; }
@@ -214,6 +282,12 @@
       <div id="h1" class="h-line l1">{{ title_line1 }}</div>
       <div id="h2" class="h-line l2">{{ title_line2 }}</div>
       <div class="tagline">{{ tagline }}</div>
+    </div>
+
+    <!-- Phase 5.5a: Grounding & Confidence Legend Bar -->
+    <div class="legend-bar" id="legendBar">
+      <div class="legend-pill confirmed"><span class="lp-icon">✓</span> CONFIRMED AOSP SPEC</div>
+      <div class="legend-pill analysis"><span class="lp-icon">💡</span> ENGINEERING ANALYSIS</div>
     </div>
 
     <div class="hr" id="hr1"></div>
@@ -257,22 +331,50 @@
 
     <!-- Technical Breakdown Cards: 2x2 grid -->
     <div class="breakdown-card bd1" id="card0" style="left:0px;width:460px">
-      <div class="bc-number">01</div>
+      <div class="bc-header-row">
+        <div class="bc-number">01</div>
+        {% if steps[0].confidence == 'analysis' %}
+          <div class="confidence-badge badge-analysis">💡 ARCHITECTURAL READ</div>
+        {% else %}
+          <div class="confidence-badge badge-confirmed">✓ CONFIRMED SPEC</div>
+        {% endif %}
+      </div>
       <div class="bc-title">{{ steps[0].label }}</div>
       <ul class="bc-pts">{% for p in steps[0].points %}<li>{{ p }}</li>{% endfor %}</ul>
     </div>
     <div class="breakdown-card bd2" id="card1" style="left:492px;width:460px">
-      <div class="bc-number">02</div>
+      <div class="bc-header-row">
+        <div class="bc-number">02</div>
+        {% if steps[1].confidence == 'analysis' %}
+          <div class="confidence-badge badge-analysis">💡 ARCHITECTURAL READ</div>
+        {% else %}
+          <div class="confidence-badge badge-confirmed">✓ CONFIRMED SPEC</div>
+        {% endif %}
+      </div>
       <div class="bc-title">{{ steps[1].label }}</div>
       <ul class="bc-pts">{% for p in steps[1].points %}<li>{{ p }}</li>{% endfor %}</ul>
     </div>
     <div class="breakdown-card bd3" id="card2" style="left:0px;width:460px">
-      <div class="bc-number">03</div>
+      <div class="bc-header-row">
+        <div class="bc-number">03</div>
+        {% if steps[2].confidence == 'analysis' %}
+          <div class="confidence-badge badge-analysis">💡 ARCHITECTURAL READ</div>
+        {% else %}
+          <div class="confidence-badge badge-confirmed">✓ CONFIRMED SPEC</div>
+        {% endif %}
+      </div>
       <div class="bc-title">{{ steps[2].label }}</div>
       <ul class="bc-pts">{% for p in steps[2].points %}<li>{{ p }}</li>{% endfor %}</ul>
     </div>
     <div class="breakdown-card bd4" id="card3" style="left:492px;width:460px">
-      <div class="bc-number">04</div>
+      <div class="bc-header-row">
+        <div class="bc-number">04</div>
+        {% if steps[3].confidence == 'analysis' %}
+          <div class="confidence-badge badge-analysis">💡 ARCHITECTURAL READ</div>
+        {% else %}
+          <div class="confidence-badge badge-confirmed">✓ CONFIRMED SPEC</div>
+        {% endif %}
+      </div>
       <div class="bc-title">{{ steps[3].label }}</div>
       <ul class="bc-pts">{% for p in steps[3].points %}<li>{{ p }}</li>{% endfor %}</ul>
     </div>
@@ -281,6 +383,24 @@
     <div class="pipeline-row" id="pipeA">
       <span class="pipe-label">TRACE:</span>
       {% for item in flow_a_items %}<div class="pipe-chip">{{ item }}</div>{% if not loop.last %}<span class="pipe-arrow">→</span>{% endif %}{% endfor %}
+    </div>
+
+    <!-- Phase 5.5c: Actionable Closing Block (What This Means For Your Codebase) -->
+    <div class="actionable-block" id="actionableBlock">
+      <div class="ab-header">
+        <div class="ab-icon">💡</div>
+        <div class="ab-title">{{ actionable_closing.title if actionable_closing and actionable_closing.title else "WHAT THIS MEANS FOR YOUR CODEBASE" }}</div>
+      </div>
+      <div class="ab-body">
+        <ul class="ab-pts">
+          {% if actionable_closing and actionable_closing.points %}
+            {% for pt in actionable_closing.points %}<li>{{ pt }}</li>{% endfor %}
+          {% else %}
+            <li>Audit your codebase for this pattern across critical UI and background execution paths.</li>
+            <li>Enforce strict boundary separation between data mapping and presentation logic.</li>
+          {% endif %}
+        </ul>
+      </div>
     </div>
 
     <!-- Key Insight / Takeaway strip -->
@@ -298,7 +418,10 @@
         <div class="footer-author">Aquib Rashid Shaikh</div>
         <div class="footer-handle">Senior Android Developer &amp; Mobile Tech Lead</div>
       </div>
-      <div class="footer-domain">Android Architecture • Kotlin • BLE • OTT • FinTech</div>
+      <div class="footer-right">
+        <div class="footer-badge">OPEN TO STRATEGIC LEADERSHIP &amp; ARCHITECTURE DISCUSSIONS ↗</div>
+        <div class="footer-domain">Android Architecture • High-Scale Mobile Systems • Kotlin</div>
+      </div>
     </div>
 
   </div>
@@ -334,20 +457,26 @@ window.drawInfographic = function() {
     while (el.scrollWidth > 250 && sz > 10) { sz--; el.style.fontSize = sz + 'px'; }
   });
 
-  // ── Position divider under title block ──
+  // ── Position legend bar under title block ──
   var titleBlock = document.querySelector('.title-block');
   var titleBottom = titleBlock.getBoundingClientRect().bottom - cr.top;
+  var legendBar = document.getElementById('legendBar');
+  var legendTop = titleBottom + 16;
+  legendBar.style.top = legendTop + 'px';
+  var legendBottom = legendTop + legendBar.getBoundingClientRect().height;
+
+  // ── Position divider under legend bar ──
   var hr1 = document.getElementById('hr1');
-  hr1.style.top = (titleBottom + 22) + 'px';
+  hr1.style.top = (legendBottom + 16) + 'px';
 
   // ── Position section rule ──
   var sectionRule = document.getElementById('sectionRule');
-  var ruleTop = titleBottom + 22 + 28;
+  var ruleTop = legendBottom + 16 + 22;
   sectionRule.style.top = ruleTop + 'px';
   var ruleH = sectionRule.getBoundingClientRect().height;
 
   // ── Position 3 flow stages ──
-  var stageTop = ruleTop + ruleH + 28;
+  var stageTop = ruleTop + ruleH + 24;
   ['stage0', 'stage1', 'stage2'].forEach(function(id) {
     document.getElementById(id).style.top = stageTop + 'px';
   });
@@ -380,40 +509,46 @@ window.drawInfographic = function() {
     document.getElementById('stage2').getBoundingClientRect().bottom
   ) - cr.top;
 
-  var row1Top = maxStageBottom + 48;
+  var row1Top = maxStageBottom + 40;
   var card0 = document.getElementById('card0'), card1 = document.getElementById('card1');
   card0.style.top = row1Top + 'px';
   card1.style.top = row1Top + 'px';
   var row1H = Math.max(card0.getBoundingClientRect().height, card1.getBoundingClientRect().height);
 
-  var row2Top = row1Top + row1H + 28;
+  var row2Top = row1Top + row1H + 24;
   var card2 = document.getElementById('card2'), card3 = document.getElementById('card3');
   card2.style.top = row2Top + 'px';
   card3.style.top = row2Top + 'px';
   var row2H = Math.max(card2.getBoundingClientRect().height, card3.getBoundingClientRect().height);
 
   // ── Position pipeline trace ──
-  var pipeTop = row2Top + row2H + 40;
+  var pipeTop = row2Top + row2H + 32;
   var pipeA = document.getElementById('pipeA');
   pipeA.style.top = pipeTop + 'px';
   var pipeH = pipeA.getBoundingClientRect().height;
 
+  // ── Phase 5.5c: Position Actionable Closing Block ──
+  var abTop = pipeTop + pipeH + 20;
+  var actionableBlock = document.getElementById('actionableBlock');
+  actionableBlock.style.top = abTop + 'px';
+  var abH = actionableBlock.getBoundingClientRect().height;
+
   // ── Position insight strip ──
-  var insightTop = pipeTop + pipeH + 24;
+  var insightTop = abTop + abH + 18;
   var insightStrip = document.getElementById('insightStrip');
   insightStrip.style.top = insightTop + 'px';
   var insightH = insightStrip.getBoundingClientRect().height;
 
   // ── Position footer ──
   var footer = document.getElementById('footer');
-  var footerTop = insightTop + insightH + 36;
+  var footerTop = insightTop + insightH + 32;
   footer.style.top = footerTop + 'px';
 
   // ── Phase 2.8: Dynamically adjust .page height to prevent bottom cropping ──
   var footerBottom = footerTop + footer.getBoundingClientRect().height;
   var totalNeeded = Math.ceil(footerBottom + 40);
   var minH = 1410;
-  var finalH = Math.max(minH, Math.min(1850, totalNeeded));
+  var finalH = Math.max(minH, Math.min(1950, totalNeeded));
   document.querySelector('.page').style.height = finalH + 'px';
 };
 

@@ -131,7 +131,22 @@ def generate_text(prompt: str, system_instruction: str = "") -> str:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def run_agent(preview: bool = False, force_topic: str = None, force_publish: bool = False,
-              dry_run: bool = False, force_archetype: str = None, theme: str = "dark"):
+              dry_run: bool = False, force_archetype: str = None, theme: str = "dark",
+              publish_live: bool = False):
+    # Live publishing safety gate (Phase 7 requirement)
+    live_enabled = (
+        os.environ.get("LIVE_PUBLISH_ENABLED", "").lower() in ("true", "1", "yes")
+        or SETTINGS.get("live_publish_enabled", False)
+    )
+    if not preview and not dry_run and not publish_live and not live_enabled:
+        print("\n" + "=" * 65)
+        print("  [SAFETY GATE] Live publishing is disabled by default.")
+        print("  To protect your LinkedIn account, live posting requires explicit opt-in.")
+        print("  Pass --publish-live flag or set LIVE_PUBLISH_ENABLED=true in settings/env.")
+        print("  Automatically falling back to DRY-RUN mode.")
+        print("=" * 65 + "\n")
+        dry_run = True
+
     mode_str = 'PREVIEW ONLY' if preview else ('DRY-RUN (logs payload, no API call)' if dry_run else 'LIVE PUBLISHING')
     print("=" * 65)
     print("  AUTONOMOUS LINKEDIN AGENT — Senior Android Developer")
@@ -406,6 +421,8 @@ if __name__ == "__main__":
     parser.add_argument("--theme", choices=["dark", "light"], default="dark",
                         help="Visual theme variant for infographic (default: dark, options: dark, light)")
     parser.add_argument("--force", action="store_true", help="Bypass idempotency lock and force publish")
+    parser.add_argument("--publish-live", action="store_true", dest="publish_live",
+                        help="Explicit authorization to post live to LinkedIn (default: disabled, runs dry-run)")
     args = parser.parse_args()
 
     if args.schedule_tomorrow:
@@ -419,4 +436,5 @@ if __name__ == "__main__":
         schedule_post_pipeline(tomorrow_str, topic=args.topic, archetype_id=args.archetype, theme=args.theme)
     else:
         run_agent(preview=args.preview, force_topic=args.topic, force_publish=args.force,
-                  dry_run=args.dry_run, force_archetype=args.archetype, theme=args.theme)
+                  dry_run=args.dry_run, force_archetype=args.archetype, theme=args.theme,
+                  publish_live=args.publish_live)

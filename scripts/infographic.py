@@ -18,12 +18,14 @@ import pathlib
 import requests
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Phase 4 & 4.6: ARCHITECTURE BLUEPRINT CARD CONTENT PROMPT
+# Phase 4, 4.6 & 5.5: ARCHITECTURE BLUEPRINT CARD CONTENT PROMPT
 # Every field MUST name a real Android API, class, exception, or mechanism.
 # Abstract adjectives (deterministic, seamless, atomic, robust, erratic) are
 # banned unless immediately followed by the named mechanism causing that property.
-# BARE API NAME-DROPPING IS STRICTLY FORBIDDEN:
-# Every bullet in steps[].points MUST be a complete clause (min 6 words with verb).
+# BARE API NAME-DROPPING IS STRICTLY FORBIDDEN (Phase 4.6).
+# Phase 5.5a: Confidence labeling (confirmed vs analysis).
+# Phase 5.5b: Functional diagrams/mockups only (no decorative icons).
+# Phase 5.5c: Actionable closing block ("WHAT THIS MEANS FOR YOUR CODEBASE").
 # ─────────────────────────────────────────────────────────────────────────────
 _ARCHITECTURE_CONTENT_PROMPT = """
 Generate content for a dark-theme Android Architecture Blueprint Card infographic.
@@ -38,20 +40,29 @@ The LinkedIn post this card accompanies (use the SAME narrative — same APIs, s
 STRICT FIELD REQUIREMENTS:
 - Every stage snippet MUST be a real code token, Android API call, exception name, or system state
   (e.g. "gatt.writeCharacteristic()", "LMK SIGKILL", "StateFlow.collect", "MTU: 517 bytes").
+  NEVER use generic decorative icon descriptions like "Bluetooth icon" or "network logo" (Phase 5.5b).
 - Every step label MUST name a real Android/Kotlin class, method, or architectural concept.
-- BARE API NAME-DROPPING IS STRICTLY FORBIDDEN (Phase 4.6):
-  Every single bullet point in steps[].points MUST be a complete, explanatory clause of at least 6 words,
-  containing BOTH a real Android API/class/exception token AND an active verb or causal relationship.
-  Explain HOW or WHY the mechanism works, what calls what, or what constraint is enforced.
-  NEVER output standalone class names, dotted methods, or short symbol lists without sentence structure.
-  * REJECTED (bare symbols / incomplete clauses):
-    - "kotlinx.coroutines.sync.Mutex"
-    - "BluetoothGatt.writeCharacteristic()"
-    - "BluetoothGattCallback.onCharacteristicWrite()"
-  * ACCEPTED (complete explanatory clauses with min 6 words and verb):
-    - "Mutex serializes outgoing writeCharacteristic calls to prevent ATT request collisions"
-    - "BluetoothGattCallback onCharacteristicWrite signals the next queued packet to proceed"
-    - "Requesting an MTU of 517 bytes reduces payload chunking across ATT transfer packets"
+- CONFIDENCE LABELING (Phase 5.5a):
+  Every stage and every step MUST specify a "confidence" field: either "confirmed" or "analysis".
+  * "confirmed": Documented, verifiable Android/Kotlin API behavior, official Google AOSP docs, or verified hardware specification.
+  * "analysis": Engineering inference, architectural trade-off, opinion, or forward-looking recommendation.
+  At least one section must be "confirmed" and at least one must be "analysis".
+- ACTIONABLE CLOSING BLOCK (Phase 5.5c):
+  "actionable_closing" MUST be an object with "title": "WHAT THIS MEANS FOR YOUR CODEBASE" and "points": 2 concrete audit steps.
+  Each point MUST be an imperative sentence of 6-12 words naming a real API or pattern (e.g. "Audit ViewModel coroutines to rethrow CancellationException").
+  CRITICAL: DO NOT paraphrase the "hook" (Key Insight) summary — provide practical audit guidance.
+- PUNCHY, HIGH-IMPACT BULLETS (STRICT - PREVENTS MOBILE DATA OVERLOAD):
+  Every bullet point in steps[].points MUST be a concise, scannable point of 4 to 8 words.
+  NEVER write full essay-length paragraphs.
+  Each point must contain BOTH a real Android API/class/exception token AND an active verb or outcome.
+  * BARE API SYMBOLS WITHOUT ACTION STILL FORBIDDEN:
+    - REJECTED: "kotlinx.coroutines.sync.Mutex" (bare token, no context)
+    - REJECTED: "BluetoothGatt.writeCharacteristic()" (bare token, no context)
+  * ACCEPTED (concise, punchy action clauses of 4-8 words):
+    - "Overrides minBufferMs to 1,500ms startup threshold"
+    - "Caps targetBufferBytes to 5MB to prevent OOM"
+    - "Serializes writeCharacteristic calls via Mutex queue"
+    - "Prevents GC thrashing during live OTT playback"
 - BANNED abstract adjectives (unless paired with the mechanism name):
   deterministic, seamless, atomic, robust, erratic, reliable, scalable, efficient,
   performant, elegant, comprehensive, revolutionary, game changer, unlocks.
@@ -70,16 +81,23 @@ Return ONLY valid JSON — no markdown, no explanation:
   "tagline": "One sharp setup line under 10 words — names a real API or exception",
   "section_label": "2-4 words all-caps e.g. 'BLE GATT INTERNALS' or 'COMPOSE STATE FLOW'",
   "hook": "One quotable takeaway under 20 words — must name a real class or API",
+  "actionable_closing": {{
+    "title": "WHAT THIS MEANS FOR YOUR CODEBASE",
+    "points": [
+      "Audit your codebase for concrete mechanism naming real API",
+      "Refactor state flow boundary naming real Kotlin pattern"
+    ]
+  }},
   "stages": [
-    {{"label": "2-3 words Title Case", "snippet": "real code token max 25 chars"}},
-    {{"label": "2-3 words Title Case", "snippet": "real code token max 25 chars"}},
-    {{"label": "2-3 words Title Case", "snippet": "real code token max 25 chars"}}
+    {{"label": "2-3 words Title Case", "snippet": "real code token max 25 chars", "confidence": "confirmed"}},
+    {{"label": "2-3 words Title Case", "snippet": "real code token max 25 chars", "confidence": "confirmed"}},
+    {{"label": "2-3 words Title Case", "snippet": "real code token max 25 chars", "confidence": "analysis"}}
   ],
   "steps": [
-    {{"label": "Real Android Class or Pattern Name", "points": ["Complete clause naming real API and active verb min 6 words", "Complete clause naming real API and active verb min 6 words", "Complete clause naming real API and active verb min 6 words"]}},
-    {{"label": "Real Android Class or Pattern Name", "points": ["Complete clause naming real API and active verb min 6 words", "Complete clause naming real API and active verb min 6 words", "Complete clause naming real API and active verb min 6 words"]}},
-    {{"label": "Real Android Class or Pattern Name", "points": ["Complete clause naming real API and active verb min 6 words", "Complete clause naming real API and active verb min 6 words", "Complete clause naming real API and active verb min 6 words"]}},
-    {{"label": "Real Android Class or Pattern Name", "points": ["Complete clause naming real API and active verb min 6 words", "Complete clause naming real API and active verb min 6 words", "Complete clause naming real API and active verb min 6 words"]}}
+    {{"label": "Real Android Class Name", "confidence": "confirmed", "points": ["Concise action clause 4-8 words naming API", "Concise action clause 4-8 words naming API"]}},
+    {{"label": "Real Android Class Name", "confidence": "confirmed", "points": ["Concise action clause 4-8 words naming API", "Concise action clause 4-8 words naming API"]}},
+    {{"label": "Real Android Class Name", "confidence": "confirmed", "points": ["Concise action clause 4-8 words naming API", "Concise action clause 4-8 words naming API"]}},
+    {{"label": "Real Android Class Name", "confidence": "analysis", "points": ["Concise action clause 4-8 words naming API", "Concise action clause 4-8 words naming API"]}}
   ],
   "flow_a_items": ["RealClass.method()", "SystemCall", "StateToken", "APIConstant", "OutputState"],
   "flow_b_items": ["SDK.class", "Mechanism", "Outcome", "Fix"]
@@ -87,8 +105,8 @@ Return ONLY valid JSON — no markdown, no explanation:
 """.strip()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Phase 4 & 4.6: SYNTAX-HIGHLIGHTED CODE CARD CONTENT PROMPT
-# Generates before/after Kotlin code comparison data.
+# Phase 4, 4.6 & 5.5: SYNTAX-HIGHLIGHTED CODE CARD CONTENT PROMPT
+# Generates before/after Kotlin code comparison data with confidence tags and actionable closing.
 # ─────────────────────────────────────────────────────────────────────────────
 _CODE_CARD_CONTENT_PROMPT = """
 Generate content for a Syntax-Highlighted Code Card infographic (Carbon/Ray.so style).
@@ -101,12 +119,16 @@ The LinkedIn post this card accompanies:
 {post_text}
 
 STRICT REQUIREMENTS:
-- steps[0] is the ANTI-PATTERN: label = the faulty function/class name, points = [badParamType, whyItBreaks, badCallSite]
-- steps[1] is the PRODUCTION FIX: label = the corrected function/class name, points = [correctParamType, whatChanged, cleanCallSite]
-- steps[2] is WHY IT BREAKS: label = names the specific Android failure mechanism (e.g. "Recomposition Loop", "Binder IPC Overflow"), points = 3 complete explanatory clauses (min 6 words with active verb) each naming a real API/system/exception
-- steps[3] is THE FIX RULE: label = the architectural rule of thumb (short, imperative), points = 3 complete explanatory clauses (min 6 words with active verb) naming real Kotlin/Android patterns
-- BARE API NAME-DROPPING IS STRICTLY FORBIDDEN (Phase 4.6):
-  Every point in steps[2].points (Why It Breaks) and steps[3].points (The Fix) MUST be a complete explanatory clause with at least 6 words and an active verb. Never output bare class names or symbols without sentence structure.
+- steps[0] is the ANTI-PATTERN: label = the faulty function/class name, confidence = "confirmed", points = [badParamType, whyItBreaks, badCallSite]
+- steps[1] is the PRODUCTION FIX: label = the corrected function/class name, confidence = "confirmed", points = [correctParamType, whatChanged, cleanCallSite]
+- steps[2] is WHY IT BREAKS: label = names the specific Android failure mechanism (e.g. "Recomposition Loop", "Binder IPC Overflow"), confidence = "confirmed", points = 1-2 punchy clauses (4-8 words each with active verb) naming real API/exception
+- steps[3] is THE FIX RULE: label = the architectural rule of thumb (short, imperative), confidence = "analysis", points = 1-2 punchy clauses (4-8 words each with active verb) naming real Kotlin/Android patterns
+- CONFIDENCE LABELING (Phase 5.5a): Every step and stage MUST specify "confidence": either "confirmed" or "analysis".
+- ACTIONABLE CLOSING BLOCK (Phase 5.5c):
+  "actionable_closing" MUST be an object with "title": "WHAT THIS MEANS FOR YOUR CODEBASE" and "points": 2 concrete audit steps (6-12 words).
+  DO NOT paraphrase the "hook" (Key Insight) summary.
+- PUNCHY BULLETS (STRICT):
+  Keep bullets in steps[2].points and steps[3].points to 1-2 concise lines of 4-8 words each. Never output bare class names without sentence structure.
 - flow_a_items = 3-5 short one-liners naming real APIs in the solution path
 - flow_b_items = 3-4 words forming the rule of thumb (e.g. ["Hoist State", "Pass Lambdas", "Stay Stable"])
 - hook = one sharp takeaway sentence under 20 words naming the real Android class or mechanism
@@ -122,16 +144,23 @@ Return ONLY valid JSON — no markdown:
   "tagline": "One line setup naming the real Android API or pattern under 10 words",
   "section_label": "2-4 words ALL CAPS e.g. 'CODE AUTOPSY' or 'COMPOSE TEARDOWN'",
   "hook": "One takeaway sentence under 20 words naming the real fix mechanism",
+  "actionable_closing": {{
+    "title": "WHAT THIS MEANS FOR YOUR CODEBASE",
+    "points": [
+      "Audit your codebase for redundant passthrough layers naming real API (min 6 words)",
+      "Refactor UI and state boundary naming real Kotlin or Android pattern (min 6 words)"
+    ]
+  }},
   "stages": [
-    {{"label": "Anti-Pattern Name", "snippet": "BadCall.invoke()"}},
-    {{"label": "Root Cause", "snippet": "GATT_STATUS 133"}},
-    {{"label": "Production Fix", "snippet": "Mutex.withLock {{}}"}}
+    {{"label": "Anti-Pattern Name", "snippet": "BadCall.invoke()", "confidence": "confirmed"}},
+    {{"label": "Root Cause", "snippet": "GATT_STATUS 133", "confidence": "confirmed"}},
+    {{"label": "Production Fix", "snippet": "Mutex.withLock {{}}", "confidence": "analysis"}}
   ],
   "steps": [
-    {{"label": "anti_pattern_function_name", "points": ["BadParamType", "// reason it breaks", "badCallSite.call()"]}},
-    {{"label": "clean_function_name", "points": ["ImmutableState", "() -> Unit", "// Preview and test-safe"]}},
-    {{"label": "Why This Breaks at Scale", "points": ["RealException thrown when buffer exceeds memory threshold", "SystemBehavior triggering unexpected recomposition loop", "Observable symptom causing frame drops in production"]}},
-    {{"label": "The Production Rule", "points": ["Kotlin pattern applied to preserve state across recreations", "SavedStateHandle used to persist arguments across process death", "Produces stable lambdas to avoid unnecessary Compose invalidations"]}}
+    {{"label": "anti_pattern_function_name", "confidence": "confirmed", "points": ["BadParamType", "// reason it breaks", "badCallSite.call()"]}},
+    {{"label": "clean_function_name", "confidence": "confirmed", "points": ["ImmutableState", "() -> Unit", "// Preview and test-safe"]}},
+    {{"label": "Why This Breaks at Scale", "confidence": "confirmed", "points": ["RealException thrown when buffer exceeds memory threshold", "SystemBehavior triggering unexpected recomposition loop", "Observable symptom causing frame drops in production"]}},
+    {{"label": "The Production Rule", "confidence": "analysis", "points": ["Kotlin pattern applied to preserve state across recreations", "SavedStateHandle used to persist arguments across process death", "Produces stable lambdas to avoid unnecessary Compose invalidations"]}}
   ],
   "flow_a_items": ["Step1.api()", "Step2.call()", "Step3.result", "OutputState"],
   "flow_b_items": ["Short", "Rule", "Of Thumb"]
@@ -197,15 +226,15 @@ def _has_android_token(text: str) -> bool:
 
 def _is_bare_api_bullet(text: str) -> tuple[bool, str]:
     """
-    Evaluates whether a bullet is a bare API symbol/token rather than a complete explanatory clause.
-    Per Phase 4.6: Word count >= 6 AND contains a verb or causal/functional relationship.
+    Evaluates whether a bullet is a bare API symbol/token rather than a punchy explanatory clause.
+    Requires word count >= 4 AND contains a verb, preposition, or causal/functional relationship.
     Returns (is_bare: bool, reason: str).
     """
     cleaned = text.strip()
     cleaned = re.sub(r'^[→\-\*•\s]+', '', cleaned).strip()
     words = cleaned.split()
-    if len(words) < 6:
-        return True, f"word count {len(words)} < 6 (must be a full clause)"
+    if len(words) < 4:
+        return True, f"word count {len(words)} < 4 (must have an active verb and context)"
     if not _VERB_CAUSAL_PATTERN.search(cleaned):
         return True, "lacks an active verb or causal relationship"
     return False, ""
@@ -285,6 +314,65 @@ def _lint_content(data: dict, template: str = "process_infographic_dark.html.j2"
                         "Every bullet must be a complete explanatory clause with >= 6 words and an active verb."
                     )
 
+    # Check 8 (Phase 5.5a): Confidence Labeling
+    valid_conf = {"confirmed", "analysis"}
+    has_confirmed = False
+    for i, step in enumerate(data.get("steps", [])):
+        conf = str(step.get("confidence", "")).lower().strip()
+        if conf and conf not in valid_conf:
+            violations.append(f"INVALID_CONFIDENCE: steps[{i}].confidence is '{conf}' (must be 'confirmed' or 'analysis')")
+        if conf == "confirmed":
+            has_confirmed = True
+
+    for i, stage in enumerate(data.get("stages", [])):
+        conf = str(stage.get("confidence", "")).lower().strip()
+        if conf and conf not in valid_conf:
+            violations.append(f"INVALID_CONFIDENCE: stages[{i}].confidence is '{conf}' (must be 'confirmed' or 'analysis')")
+        if conf == "confirmed":
+            has_confirmed = True
+
+    # Check 9 (Phase 5.5b): Functional diagrams only, no generic decorative icon descriptions
+    banned_decor_icons = re.compile(r'\b(icon|logo|clipart|illustration|graphic|symbol)\b', re.I)
+    for i, stage in enumerate(data.get("stages", [])):
+        snip = stage.get("snippet", "")
+        lbl = stage.get("label", "")
+        if banned_decor_icons.search(snip) or banned_decor_icons.search(lbl):
+            violations.append(
+                f"DECORATIVE_ICON: stages[{i}] uses generic icon term ('{lbl}'/'{snip}'). "
+                "Stage snippets must be real functional tokens, memory layouts, or mechanism states."
+            )
+
+    # Check 10 (Phase 5.5c): Actionable Closing Block
+    ac = data.get("actionable_closing")
+    if not ac or not isinstance(ac, dict):
+        violations.append("MISSING_ACTIONABLE_CLOSING: 'actionable_closing' object with 'title' and 'points' is required")
+    else:
+        pts = ac.get("points", [])
+        if not pts or len(pts) < 1:
+            violations.append("EMPTY_ACTIONABLE_POINTS: 'actionable_closing.points' must contain 1-3 concrete audit steps")
+        else:
+            for idx, pt in enumerate(pts):
+                words = pt.strip().split()
+                if len(words) < 6:
+                    violations.append(
+                        f"SHORT_ACTIONABLE_POINT: actionable_closing.points[{idx}] has {len(words)} words "
+                        "(must be >= 6 words with active verb and real API)"
+                    )
+
+            # Check for excessive paraphrasing between hook and actionable closing
+            hook_text = data.get("hook", "").lower()
+            ac_combined = " ".join(pts).lower()
+            stops = {"the", "a", "an", "and", "or", "in", "on", "at", "to", "for", "of", "with", "by", "is", "are", "was", "were", "it", "this", "that", "from", "your"}
+            h_words = set(re.findall(r'\b[a-z]{4,}\b', hook_text)) - stops
+            ac_words = set(re.findall(r'\b[a-z]{4,}\b', ac_combined)) - stops
+            if h_words and ac_words:
+                overlap = len(h_words & ac_words) / min(len(h_words), len(ac_words))
+                if overlap > 0.75:
+                    violations.append(
+                        "PARAPHRASED_ACTIONABLE_CLOSING: Actionable closing points appear to just repeat the Key Insight summary. "
+                        "Provide distinct, practical codebase audit steps."
+                    )
+
     return violations
 
 
@@ -300,19 +388,55 @@ def _clean_text(s: str) -> str:
 
 
 def _clean_content(data: dict) -> dict:
-    data["title_line1"] = _clean_text(data["title_line1"])
-    data["title_line2"] = _clean_text(data["title_line2"])
-    data["tagline"] = _clean_text(data["tagline"])
-    data["hook"] = _clean_text(data["hook"])
+    data["title_line1"] = _clean_text(data.get("title_line1", ""))
+    data["title_line2"] = _clean_text(data.get("title_line2", ""))
+    data["tagline"] = _clean_text(data.get("tagline", ""))
+    data["hook"] = _clean_text(data.get("hook", ""))
     data["section_label"] = _clean_text(data.get("section_label", "")).upper() or "ANDROID ARCHITECTURE"
-    for stage in data["stages"]:
-        stage["label"] = _clean_text(stage["label"])
-        stage["snippet"] = _clean_text(stage["snippet"])
-    for step in data["steps"]:
-        step["label"] = _clean_text(step["label"])
-        step["points"] = [_clean_text(p) for p in step["points"]]
-    data["flow_a_items"] = [_clean_text(i) for i in data["flow_a_items"]]
-    data["flow_b_items"] = [_clean_text(i) for i in data["flow_b_items"]]
+
+    # Phase 5.5a: Confidence sanitization
+    for stage in data.get("stages", []):
+        stage["label"] = _clean_text(stage.get("label", ""))
+        stage["snippet"] = _clean_text(stage.get("snippet", ""))
+        conf = str(stage.get("confidence", "confirmed")).lower().strip()
+        stage["confidence"] = conf if conf in ("confirmed", "analysis") else "confirmed"
+
+    for i, step in enumerate(data.get("steps", [])):
+        step["label"] = _clean_text(step.get("label", ""))
+        step["points"] = [_clean_text(p) for p in step.get("points", [])]
+        conf = str(step.get("confidence", "")).lower().strip()
+        if conf not in ("confirmed", "analysis"):
+            conf = "analysis" if i == len(data.get("steps", [])) - 1 else "confirmed"
+        step["confidence"] = conf
+
+    data["flow_a_items"] = [_clean_text(i) for i in data.get("flow_a_items", [])]
+    data["flow_b_items"] = [_clean_text(i) for i in data.get("flow_b_items", [])]
+
+    # Phase 5.5c: Actionable closing block sanitization
+    ac = data.get("actionable_closing", {})
+    if isinstance(ac, dict):
+        ac_title = _clean_text(ac.get("title", "")) or "WHAT THIS MEANS FOR YOUR CODEBASE"
+        ac_pts = [_clean_text(p) for p in ac.get("points", []) if _clean_text(p)]
+        if not ac_pts:
+            ac_pts = [
+                "Audit your codebase for this pattern across critical UI and background paths.",
+                "Enforce strict boundary separation between data mapping and presentation logic."
+            ]
+        data["actionable_closing"] = {"title": ac_title, "points": ac_pts}
+    elif isinstance(ac, list):
+        data["actionable_closing"] = {
+            "title": "WHAT THIS MEANS FOR YOUR CODEBASE",
+            "points": [_clean_text(p) for p in ac if _clean_text(p)]
+        }
+    else:
+        data["actionable_closing"] = {
+            "title": "WHAT THIS MEANS FOR YOUR CODEBASE",
+            "points": [
+                "Audit your codebase for this pattern across critical UI and background paths.",
+                "Enforce strict boundary separation between data mapping and presentation logic."
+            ]
+        }
+
     return data
 
 

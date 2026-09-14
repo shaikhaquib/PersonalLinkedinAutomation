@@ -106,9 +106,9 @@
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
   .cw-dot { width: 12px; height: 12px; border-radius: 50%; }
-  .cw-dot.r { background: #ef4444; }
-  .cw-dot.y { background: #f59e0b; }
-  .cw-dot.g { background: #10b981; }
+  .cw-dot.r { background: var(--accent); }
+  .cw-dot.y { background: var(--slate); }
+  .cw-dot.g { background: var(--cyan); }
   .cw-filename {
     font-family: 'JetBrains Mono', monospace; font-size: 14px;
     color: #94a3b8; margin-left: 8px;
@@ -133,8 +133,8 @@
   .num { color: #38bdf8; }          /* numbers */
   .def { color: #f1f5f9; }          /* default text */
   .an  { color: #c084fc; }          /* annotations */
-  .err { color: #fca5a5; }          /* error / bad pattern highlight */
-  .ok  { color: #67e8f9; }          /* good pattern highlight */
+  .err { color: #c084fc; }          /* bad pattern highlight — violet */
+  .ok  { color: #67e8f9; }          /* good pattern highlight — cyan */
 
   /* ── label bar between two code windows ── */
   .vs-bar {
@@ -174,6 +174,62 @@
   .rule-card.rc2 { --c: var(--cyan); }
   .rule-card.rc3 { --c: var(--accent); }
 
+  /* ── Phase 5.5a: Confidence Badges & Legend (Light Theme) ── */
+  .legend-bar {
+    position: absolute; left: 0; display: flex; align-items: center; gap: 12px;
+  }
+  .legend-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 14px; border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.6px;
+  }
+  .legend-pill.confirmed {
+    background: rgba(8, 145, 178, 0.08); border: 1px solid rgba(8, 145, 178, 0.28); color: var(--cyan);
+  }
+  .legend-pill.analysis {
+    background: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.28); color: var(--accent);
+  }
+  .lp-icon { font-size: 13px; font-weight: 900; }
+
+  .confidence-badge {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 6px; letter-spacing: 0.6px;
+    display: inline-flex; align-items: center; gap: 5px; text-transform: uppercase;
+  }
+  .badge-confirmed {
+    background: rgba(8, 145, 178, 0.1); color: var(--cyan); border: 1px solid rgba(8, 145, 178, 0.25);
+  }
+  .badge-analysis {
+    background: rgba(124, 58, 237, 0.1); color: var(--accent); border: 1px solid rgba(124, 58, 237, 0.25);
+  }
+
+  /* ── Phase 5.5c: Actionable Closing Block (Light Theme) ── */
+  .actionable-block {
+    position: absolute; left: 0; width: 952px;
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.06) 0%, rgba(124, 58, 237, 0.04) 100%);
+    border: 1px solid rgba(8, 145, 178, 0.22); border-radius: 14px;
+    padding: 20px 26px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  }
+  .ab-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .ab-icon {
+    font-size: 18px; color: var(--cyan);
+  }
+  .ab-title {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px;
+    letter-spacing: 1.5px; color: var(--cyan); text-transform: uppercase;
+  }
+  .ab-pts { list-style: none; }
+  .ab-pts li {
+    font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px;
+    color: var(--ink); line-height: 1.55; padding-left: 20px; position: relative; margin-bottom: 6px;
+  }
+  .ab-pts li:last-child { margin-bottom: 0; }
+  .ab-pts li::before {
+    content: "✓"; position: absolute; left: 0; color: var(--cyan); font-weight: 800; font-family: 'JetBrains Mono', monospace;
+  }
+
   /* ── insight strip ── */
   .insight-strip {
     position: absolute; left: 0; width: 952px;
@@ -203,9 +259,16 @@
     display: flex; align-items: center; justify-content: space-between;
     border-top: 1px solid var(--line); padding-top: 16px;
   }
-  .footer-author { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: var(--ink); }
-  .footer-handle { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 15px; color: var(--slate); }
-  .footer-domain { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px; color: var(--accent); }
+  .footer-author { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 19px; color: var(--ink); }
+  .footer-handle { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 14px; color: var(--slate); margin-top: 2px; }
+  .footer-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .footer-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11px;
+    color: var(--cyan); background: rgba(8, 145, 178, 0.08); border: 1px solid rgba(8, 145, 178, 0.28);
+    padding: 3px 10px; border-radius: 6px; letter-spacing: 0.5px;
+  }
+  .footer-domain { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: var(--accent); letter-spacing: 0.3px; }
 </style>
 </head>
 <body>
@@ -220,6 +283,12 @@
       <div id="h1" class="h-line l1">{{ title_line1 }}</div>
       <div id="h2" class="h-line l2">{{ title_line2 }}</div>
       <div class="tagline">{{ tagline }}</div>
+    </div>
+
+    <!-- Phase 5.5a: Grounding & Confidence Legend Bar -->
+    <div class="legend-bar" id="legendBar">
+      <div class="legend-pill confirmed"><span class="lp-icon">✓</span> CONFIRMED AOSP SPEC</div>
+      <div class="legend-pill analysis"><span class="lp-icon">💡</span> ENGINEERING ANALYSIS</div>
     </div>
 
     <div class="hr" id="hr1"></div>
@@ -271,21 +340,56 @@
 
     <!-- 3 rule callout cards -->
     <div class="rule-card rc1" id="rcard0" style="left:0;width:300px">
-      <div class="rc-label" style="color:var(--accent)">WHY IT BREAKS</div>
+      <div class="rc-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="rc-label" style="color:var(--accent);margin-bottom:0">WHY IT BREAKS</div>
+        {% if steps[2].confidence == 'analysis' %}
+          <div class="confidence-badge badge-analysis">💡 ANALYSIS</div>
+        {% else %}
+          <div class="confidence-badge badge-confirmed">✓ SPEC</div>
+        {% endif %}
+      </div>
       <div class="rc-rule">{{ steps[2].label }}</div>
       <ul class="rc-pts">{% for p in steps[2].points %}<li>{{ p }}</li>{% endfor %}</ul>
     </div>
     <div class="rule-card rc2" id="rcard1" style="left:326px;width:300px">
-      <div class="rc-label" style="color:var(--cyan)">THE FIX</div>
+      <div class="rc-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="rc-label" style="color:var(--cyan);margin-bottom:0">THE FIX</div>
+        {% if steps[3].confidence == 'analysis' %}
+          <div class="confidence-badge badge-analysis">💡 ANALYSIS</div>
+        {% else %}
+          <div class="confidence-badge badge-confirmed">✓ SPEC</div>
+        {% endif %}
+      </div>
       <div class="rc-rule">{{ steps[3].label }}</div>
       <ul class="rc-pts">{% for p in steps[3].points %}<li>{{ p }}</li>{% endfor %}</ul>
     </div>
     <div class="rule-card rc3" id="rcard2" style="left:652px;width:300px">
-      <div class="rc-label" style="color:var(--accent)">RULE OF THUMB</div>
+      <div class="rc-header-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="rc-label" style="color:var(--accent);margin-bottom:0">RULE OF THUMB</div>
+        <div class="confidence-badge badge-analysis">💡 ANALYSIS</div>
+      </div>
       <div class="rc-rule">{{ flow_b_items | join(" → ") }}</div>
       <ul class="rc-pts">
         {% for item in flow_a_items %}<li>{{ item }}</li>{% endfor %}
       </ul>
+    </div>
+
+    <!-- Phase 5.5c: Actionable Closing Block (What This Means For Your Codebase) -->
+    <div class="actionable-block" id="actionableBlock">
+      <div class="ab-header">
+        <div class="ab-icon">💡</div>
+        <div class="ab-title">{{ actionable_closing.title if actionable_closing and actionable_closing.title else "WHAT THIS MEANS FOR YOUR CODEBASE" }}</div>
+      </div>
+      <div class="ab-body">
+        <ul class="ab-pts">
+          {% if actionable_closing and actionable_closing.points %}
+            {% for pt in actionable_closing.points %}<li>{{ pt }}</li>{% endfor %}
+          {% else %}
+            <li>Audit your codebase for this pattern across critical UI and background execution paths.</li>
+            <li>Enforce strict boundary separation between data mapping and presentation logic.</li>
+          {% endif %}
+        </ul>
+      </div>
     </div>
 
     <!-- Key Insight Strip (replaces sticky note) -->
@@ -303,7 +407,10 @@
         <div class="footer-author">Aquib Rashid Shaikh</div>
         <div class="footer-handle">Senior Android Developer &amp; Mobile Tech Lead</div>
       </div>
-      <div class="footer-domain">Android Architecture • Kotlin • BLE • OTT • FinTech</div>
+      <div class="footer-right">
+        <div class="footer-badge">OPEN TO STRATEGIC LEADERSHIP &amp; ARCHITECTURE DISCUSSIONS ↗</div>
+        <div class="footer-domain">Android Architecture • High-Scale Mobile Systems • Kotlin</div>
+      </div>
     </div>
 
   </div>
@@ -330,34 +437,40 @@ window.drawInfographic = function() {
   var titleBlock = document.querySelector('.title-block');
   var titleBottom = titleBlock.getBoundingClientRect().bottom - cr.top;
 
+  // Position legend bar under title block
+  var legendBar = document.getElementById('legendBar');
+  var legendTop = titleBottom + 16;
+  legendBar.style.top = legendTop + 'px';
+  var legendBottom = legendTop + legendBar.getBoundingClientRect().height;
+
   var hr1 = document.getElementById('hr1');
-  hr1.style.top = (titleBottom + 22) + 'px';
+  hr1.style.top = (legendBottom + 16) + 'px';
 
   var sectionRule = document.getElementById('sectionRule');
-  var ruleTop = titleBottom + 22 + 28;
+  var ruleTop = legendBottom + 16 + 22;
   sectionRule.style.top = ruleTop + 'px';
   var ruleH = sectionRule.getBoundingClientRect().height;
 
   // Bad code window
-  var badTop = ruleTop + ruleH + 28;
+  var badTop = ruleTop + ruleH + 24;
   var codeWindowBad = document.getElementById('codeWindowBad');
   codeWindowBad.style.top = badTop + 'px';
   var badH = codeWindowBad.getBoundingClientRect().height;
 
   // VS bar
   var vsBar = document.getElementById('vsBar');
-  var vsTop = badTop + badH + 16;
+  var vsTop = badTop + badH + 14;
   vsBar.style.top = vsTop + 'px';
   var vsH = vsBar.getBoundingClientRect().height;
 
   // Good code window
-  var goodTop = vsTop + vsH + 16;
+  var goodTop = vsTop + vsH + 14;
   var codeWindowGood = document.getElementById('codeWindowGood');
   codeWindowGood.style.top = goodTop + 'px';
   var goodH = codeWindowGood.getBoundingClientRect().height;
 
   // Rule cards
-  var rcardsTop = goodTop + goodH + 36;
+  var rcardsTop = goodTop + goodH + 26;
   ['rcard0','rcard1','rcard2'].forEach(function(id) {
     var el = document.getElementById(id);
     el.style.top = rcardsTop + 'px';
@@ -368,22 +481,28 @@ window.drawInfographic = function() {
     document.getElementById('rcard2').getBoundingClientRect().height
   );
 
+  // Phase 5.5c: Actionable Closing Block
+  var abTop = rcardsTop + rH + 22;
+  var actionableBlock = document.getElementById('actionableBlock');
+  actionableBlock.style.top = abTop + 'px';
+  var abH = actionableBlock.getBoundingClientRect().height;
+
   // Insight strip
-  var insightTop = rcardsTop + rH + 28;
+  var insightTop = abTop + abH + 18;
   var insightStrip = document.getElementById('insightStrip');
   insightStrip.style.top = insightTop + 'px';
   var insightH = insightStrip.getBoundingClientRect().height;
 
   // Footer
   var footer = document.getElementById('footer');
-  var footerTop = insightTop + insightH + 36;
+  var footerTop = insightTop + insightH + 32;
   footer.style.top = footerTop + 'px';
 
   // ── Phase 2.8: Dynamically adjust .page height to prevent bottom cropping ──
   var footerBottom = footerTop + footer.getBoundingClientRect().height;
   var totalNeeded = Math.ceil(footerBottom + 40);
   var minH = 1410;
-  var finalH = Math.max(minH, Math.min(1850, totalNeeded));
+  var finalH = Math.max(minH, Math.min(1950, totalNeeded));
   document.querySelector('.page').style.height = finalH + 'px';
 };
 

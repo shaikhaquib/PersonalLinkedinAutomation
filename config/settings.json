@@ -6,5 +6,6 @@
   "daily_report": false,
   "max_review_attempts": 3,
   "target_post_length": 1300,
-  "max_post_length": 3000
+  "max_post_length": 3000,
+  "live_publish_enabled": false
 }

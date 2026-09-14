@@ -81,12 +81,22 @@ STRICT BANS — any post triggering these will be rejected by the Quality Review
 - NEVER use markdown ** or _ for formatting.
 - NEVER invent fake metrics or company names. Use real ones from the knowledge base only.
 - BARE API NAME-DROPPING FORBIDDEN (Phase 4.6): Every bullet point (→) and claim in the post body must be a complete explanatory sentence of at least 6 words, naming the API and explaining the cause, effect, or mechanism with an active verb. Never output a bare class name, dotted method call, or SDK constant without full sentence structure.
+- CONFIDENCE & GROUNDING (Phase 5.5a): Clearly ground claims in real AOSP source, Android SDK contracts, or Kotlin stdlib behaviors. When offering an architectural recommendation, state the trade-off as an engineering design deduction, not an arbitrary absolute.
+- ACTIONABLE TAKEAWAY (Phase 5.5c): Provide a concrete recommendation (what to audit in the codebase) before the closing peer question.
 
 - End with a genuine technical question to the engineering community.
-- DO NOT add a canned networking pitch ("I share insights on building...").
-- Add exactly 3-5 targeted hashtags on the last line:
-  #AndroidDev #Kotlin #JetpackCompose #MobileArchitecture — pick the most relevant.
-- Target length: 650 to 950 characters (approx. 100 to 140 words, 4 to 5 concise paragraphs).
+- STEALTH RECRUITER & LEADERSHIP SIGNAL:
+  Immediately after the question, add a subtle, authoritative peer sign-off:
+  "Scaling high-impact mobile platforms or engineering teams? Open to exchanging notes with mobile leaders — DMs are open."
+  (Signals accessibility and openness to leadership outreach to recruiters, while reading as natural senior thought leadership to regular peers. Never write '#OpenToWork' or ask for a job).
+- 4-TIER ENGAGEMENT HASHTAG STRATEGY:
+  Add exactly 4-5 targeted hashtags on the very last line, combining:
+  1. Broad Reach (1M+ follower community anchor): #AndroidDev or #SoftwareEngineering
+  2. Core Language / Framework: #Kotlin or #JetpackCompose
+  3. Domain Authority: #MobileArchitecture, #SystemDesign, or #Performance
+  4. Recruiter / Leadership Discovery: #TechLeadership, #SoftwareArchitecture, or #MobileEngineering
+  (Example: #AndroidDev #Kotlin #MobileArchitecture #TechLeadership. Do NOT use dead low-volume tags like #ExoPlayer or #GATT).
+- Target length: 650 to 1050 characters (approx. 110 to 160 words, 4 to 5 concise paragraphs).
 - STRICT CONCISENESS: An infographic card accompanies the post. Do NOT write an essay. Do NOT repeat the same concept in multiple sentences. Keep it punchy, tight, and scannable on mobile screens.
 
 After the post, on a new line starting with "FIRST_COMMENT:", write a short 1-2 line

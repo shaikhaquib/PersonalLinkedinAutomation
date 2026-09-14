@@ -79,7 +79,7 @@ def render(content: dict, out_path: str, template: str = TEMPLATE, scale: int = 
                 const el = document.querySelector('.page');
                 return el ? Math.ceil(el.getBoundingClientRect().height) : 1410;
             }""")
-            final_h = max(1410, min(1850, int(rendered_h)))
+            final_h = max(1410, min(1950, int(rendered_h)))
             if final_h != height:
                 page.set_viewport_size({"width": width, "height": final_h})
                 page.wait_for_timeout(100)
