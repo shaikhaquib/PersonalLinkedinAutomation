@@ -22,9 +22,9 @@ OUTPUT    = ROOT / "output" / "infographic.png"
 # Canvas size per template.
 _CANVAS_SIZES = {
     "process_infographic_dark.html.j2": (1080, 1410),
-    "code_card_dark.html.j2":           (1080, 1410),
+    "code_card_dark.html.j2":           (1080, 1180),
     "process_infographic_light.html.j2":(1080, 1410),
-    "code_card_light.html.j2":          (1080, 1410),
+    "code_card_light.html.j2":          (1080, 1180),
 }
 
 

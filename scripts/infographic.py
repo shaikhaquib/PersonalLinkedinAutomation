@@ -105,13 +105,11 @@ Return ONLY valid JSON — no markdown, no explanation:
 """.strip()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Phase 4, 4.6 & 5.5: SYNTAX-HIGHLIGHTED CODE CARD CONTENT PROMPT
-# Generates before/after Kotlin code comparison data with confidence tags and actionable closing.
+# Code Card v2 — editorial before/after layout with real Kotlin snippets
 # ─────────────────────────────────────────────────────────────────────────────
 _CODE_CARD_CONTENT_PROMPT = """
-Generate content for a Syntax-Highlighted Code Card infographic (Carbon/Ray.so style).
-This card shows a BEFORE (anti-pattern) vs. AFTER (production fix) Kotlin code comparison
-for a Senior Android Developer's LinkedIn post.
+Generate content for a clean editorial Code Autopsy card for a Senior Android Developer LinkedIn post.
+The card shows a real BEFORE (anti-pattern) vs AFTER (production fix) Kotlin code comparison.
 
 Topic: {topic}
 
@@ -119,53 +117,46 @@ The LinkedIn post this card accompanies:
 {post_text}
 
 STRICT REQUIREMENTS:
-- steps[0] is the ANTI-PATTERN: label = the faulty function/class name, confidence = "confirmed", points = [badParamType, whyItBreaks, badCallSite]
-- steps[1] is the PRODUCTION FIX: label = the corrected function/class name, confidence = "confirmed", points = [correctParamType, whatChanged, cleanCallSite]
-- steps[2] is WHY IT BREAKS: label = names the specific Android failure mechanism (e.g. "Recomposition Loop", "Binder IPC Overflow"), confidence = "confirmed", points = 1-2 punchy clauses (4-8 words each with active verb) naming real API/exception
-- steps[3] is THE FIX RULE: label = the architectural rule of thumb (short, imperative), confidence = "analysis", points = 1-2 punchy clauses (4-8 words each with active verb) naming real Kotlin/Android patterns
-- CONFIDENCE LABELING (Phase 5.5a): Every step and stage MUST specify "confidence": either "confirmed" or "analysis".
-- ACTIONABLE CLOSING BLOCK (Phase 5.5c):
-  "actionable_closing" MUST be an object with "title": "WHAT THIS MEANS FOR YOUR CODEBASE" and "points": 2 concrete audit steps (6-12 words).
-  DO NOT paraphrase the "hook" (Key Insight) summary.
-- PUNCHY BULLETS (STRICT):
-  Keep bullets in steps[2].points and steps[3].points to 1-2 concise lines of 4-8 words each. Never output bare class names without sentence structure.
-- flow_a_items = 3-5 short one-liners naming real APIs in the solution path
-- flow_b_items = 3-4 words forming the rule of thumb (e.g. ["Hoist State", "Pass Lambdas", "Stay Stable"])
-- hook = one sharp takeaway sentence under 20 words naming the real Android class or mechanism
+- "category": 2-4 words ALL CAPS (e.g. "COROUTINE AUTOPSY", "COMPOSE TEARDOWN")
+- "headline": 2-4 words, punchy hook (e.g. "Stop Swallowing")
+- "subhead": 2-5 words naming the mechanism (e.g. "CancellationException")
+- "tagline": one line under 14 words explaining the production risk
+- "before_label": Kotlin filename for anti-pattern (e.g. "AntiPattern.kt")
+- "after_label": Kotlin filename for fix (e.g. "ProfileViewModel.kt")
+- "before_code": 6-14 lines of realistic Kotlin showing the anti-pattern. Must compile visually.
+  Use viewModelScope, repository calls, or Compose APIs as appropriate. Include the bad catch block.
+- "after_code": 6-16 lines of realistic Kotlin showing the production fix for the SAME scenario.
+  Must include proper CancellationException handling when relevant.
+- "takeaways": exactly 3 imperative bullets, 6-14 words each, naming real APIs or patterns
 
-BANNED abstract adjectives: deterministic, seamless, atomic, robust, erratic.
-BANNED generic phrases: "game changer", "revolutionary", "unlock", "delve", "Three weeks ago".
-Every point bullet in steps[2] and steps[3] MUST include at least one of: real class name, Kotlin API method, Android SDK constant, or named exception.
+BANNED: generic adjectives (seamless, robust, game changer), markdown fences, emoji.
+Every takeaway must name a real Android/Kotlin API, class, or exception.
 
 Return ONLY valid JSON — no markdown:
 {{
-  "title_line1": "Short punchy anti-pattern hook (3-5 words) Title Case",
-  "title_line2": "The production fix revelation (3-5 words) Title Case",
-  "tagline": "One line setup naming the real Android API or pattern under 10 words",
-  "section_label": "2-4 words ALL CAPS e.g. 'CODE AUTOPSY' or 'COMPOSE TEARDOWN'",
-  "hook": "One takeaway sentence under 20 words naming the real fix mechanism",
-  "actionable_closing": {{
-    "title": "WHAT THIS MEANS FOR YOUR CODEBASE",
-    "points": [
-      "Audit your codebase for redundant passthrough layers naming real API (min 6 words)",
-      "Refactor UI and state boundary naming real Kotlin or Android pattern (min 6 words)"
-    ]
-  }},
-  "stages": [
-    {{"label": "Anti-Pattern Name", "snippet": "BadCall.invoke()", "confidence": "confirmed"}},
-    {{"label": "Root Cause", "snippet": "GATT_STATUS 133", "confidence": "confirmed"}},
-    {{"label": "Production Fix", "snippet": "Mutex.withLock {{}}", "confidence": "analysis"}}
-  ],
-  "steps": [
-    {{"label": "anti_pattern_function_name", "confidence": "confirmed", "points": ["BadParamType", "// reason it breaks", "badCallSite.call()"]}},
-    {{"label": "clean_function_name", "confidence": "confirmed", "points": ["ImmutableState", "() -> Unit", "// Preview and test-safe"]}},
-    {{"label": "Why This Breaks at Scale", "confidence": "confirmed", "points": ["RealException thrown when buffer exceeds memory threshold", "SystemBehavior triggering unexpected recomposition loop", "Observable symptom causing frame drops in production"]}},
-    {{"label": "The Production Rule", "confidence": "analysis", "points": ["Kotlin pattern applied to preserve state across recreations", "SavedStateHandle used to persist arguments across process death", "Produces stable lambdas to avoid unnecessary Compose invalidations"]}}
-  ],
-  "flow_a_items": ["Step1.api()", "Step2.call()", "Step3.result", "OutputState"],
-  "flow_b_items": ["Short", "Rule", "Of Thumb"]
+  "category": "COROUTINE AUTOPSY",
+  "headline": "Stop Swallowing",
+  "subhead": "CancellationException",
+  "tagline": "Orphaned jobs survive after viewModelScope clears",
+  "before_label": "AntiPattern.kt",
+  "after_label": "ProfileViewModel.kt",
+  "before_code": "viewModelScope.launch {{\\n    try {{\\n        repository.loadUserProfile()\\n    }} catch (e: Exception) {{\\n        Log.e(TAG, \\"Failed\\", e)\\n    }}\\n}}",
+  "after_code": "viewModelScope.launch {{\\n    try {{\\n        repository.loadUserProfile()\\n    }} catch (e: CancellationException) {{\\n        throw e\\n    }} catch (e: Exception) {{\\n        _uiState.update {{ it.copy(error = e.toUserMessage()) }}\\n    }}\\n}}",
+  "takeaways": [
+    "Rethrow CancellationException before handling domain failures",
+    "Map repository errors with sealed Result at the data boundary",
+    "Inspect runCatching failures before exposing UI error states"
+  ]
 }}
 """.strip()
+
+_KOTLIN_KEYWORDS = {
+    "fun", "val", "var", "try", "catch", "throw", "if", "else", "return", "class",
+    "object", "interface", "when", "is", "as", "by", "in", "for", "while", "do",
+    "suspend", "override", "private", "public", "internal", "protected", "open",
+    "abstract", "sealed", "data", "enum", "import", "package", "true", "false",
+    "null", "this", "super", "lazy", "init", "companion", "get", "set",
+}
 
 _SYSTEM = "You generate structured JSON content for technical Android developer infographics. Return only valid JSON, no extra text, no markdown code fences."
 
@@ -376,6 +367,141 @@ def _lint_content(data: dict, template: str = "process_infographic_dark.html.j2"
     return violations
 
 
+def _highlight_kotlin(code: str, highlight_substr: str = "", highlight_class: str = "") -> str:
+    """Lightweight Kotlin syntax highlighter for card rendering."""
+    import html as html_mod
+
+    def _stash_segments(escaped: str, pattern: str, wrapper: str) -> tuple[str, list[str]]:
+        tokens = []
+
+        def _repl(match):
+            tokens.append(wrapper.format(match.group(0)))
+            return f"\x00T{len(tokens) - 1}\x00"
+
+        escaped = re.sub(pattern, _repl, escaped)
+        return escaped, tokens
+
+    def _restore_segments(escaped: str, tokens: list[str]) -> str:
+        for idx, token in enumerate(tokens):
+            escaped = escaped.replace(f"\x00T{idx}\x00", token)
+        return escaped
+
+    def _apply_syntax(escaped: str) -> str:
+        escaped = re.sub(r'(@[A-Za-z_][A-Za-z0-9_]*)', r'<span class="an">\1</span>', escaped)
+
+        kw_pattern = "|".join(sorted(_KOTLIN_KEYWORDS, key=len, reverse=True))
+        escaped = re.sub(
+            rf'\b({kw_pattern})\b',
+            r'<span class="kw">\1</span>',
+            escaped,
+        )
+
+        escaped = re.sub(r'(:\s*)([A-Z][A-Za-z0-9_]*)', r'\1<span class="ty">\2</span>', escaped)
+        escaped = re.sub(
+            r'\bcatch\s*\(\s*e:\s*([A-Z][A-Za-z0-9_]*)',
+            r'catch (e: <span class="ty">\1</span>',
+            escaped,
+        )
+        escaped = re.sub(
+            r'\b([a-z_][A-Za-z0-9_]*)\s*\(',
+            r'<span class="fn">\1</span>(',
+            escaped,
+        )
+        return escaped
+
+    def _colorize_plain_line(line: str) -> str:
+        escaped = html_mod.escape(line)
+
+        if "//" in escaped:
+            idx = escaped.index("//")
+            comment = f'<span class="cm">{escaped[idx:]}</span>'
+            escaped = escaped[:idx]
+            escaped, tokens = _stash_segments(escaped, r'&quot;.*?&quot;', '<span class="str">{}</span>')
+            escaped = _apply_syntax(escaped)
+            escaped = _restore_segments(escaped, tokens)
+            return escaped + comment
+
+        escaped, tokens = _stash_segments(escaped, r'&quot;.*?&quot;', '<span class="str">{}</span>')
+        escaped = _apply_syntax(escaped)
+        return _restore_segments(escaped, tokens)
+
+    lines = code.replace("\r\n", "\n").split("\n")
+    out_lines = []
+    for line in lines:
+        colored = _colorize_plain_line(line)
+        if highlight_substr and highlight_class and highlight_substr in line:
+            colored = f'<span class="{highlight_class}">{colored}</span>'
+        out_lines.append(colored)
+    return "\n".join(out_lines)
+
+
+def _clean_code_card_content(data: dict) -> dict:
+    data["category"] = _clean_text(data.get("category", "")).upper() or "CODE AUTOPSY"
+    data["headline"] = _clean_text(data.get("headline", ""))
+    data["subhead"] = _clean_text(data.get("subhead", ""))
+    data["tagline"] = _clean_text(data.get("tagline", ""))
+    data["before_label"] = _clean_text(data.get("before_label", "")) or "AntiPattern.kt"
+    data["after_label"] = _clean_text(data.get("after_label", "")) or "ProductionFix.kt"
+    data["before_code"] = data.get("before_code", "").strip()
+    data["after_code"] = data.get("after_code", "").strip()
+    takeaways = [_clean_text(t) for t in data.get("takeaways", []) if _clean_text(t)]
+    if len(takeaways) < 3:
+        takeaways.extend([
+            "Audit ViewModel coroutines for swallowed CancellationException paths",
+            "Handle domain failures at the repository boundary with sealed Result",
+            "Never map cancellation signals into UI error states",
+        ])
+    data["takeaways"] = takeaways[:3]
+    return data
+
+
+def _lint_code_card_content(data: dict) -> list[str]:
+    violations = []
+    required = [
+        "category", "headline", "subhead", "tagline",
+        "before_label", "after_label", "before_code", "after_code", "takeaways",
+    ]
+    for key in required:
+        if not data.get(key):
+            violations.append(f"MISSING_FIELD: '{key}' is required for code cards")
+
+    full_text = " ".join([
+        data.get("headline", ""),
+        data.get("subhead", ""),
+        data.get("tagline", ""),
+        data.get("before_code", ""),
+        data.get("after_code", ""),
+        " ".join(data.get("takeaways", [])),
+    ])
+    banned_match = _BANNED_ABSTRACT.search(full_text)
+    if banned_match:
+        violations.append(f"BANNED_PHRASE: '{banned_match.group(0)}' found in content")
+
+    if len(data.get("before_code", "").splitlines()) < 4:
+        violations.append("SHORT_BEFORE_CODE: before_code must be at least 4 lines")
+    if len(data.get("after_code", "").splitlines()) < 4:
+        violations.append("SHORT_AFTER_CODE: after_code must be at least 4 lines")
+
+    for i, tip in enumerate(data.get("takeaways", [])):
+        if len(tip.split()) < 5:
+            violations.append(f"SHORT_TAKEAWAY: takeaways[{i}] must be at least 5 words")
+        if not _has_android_token(tip):
+            violations.append(f"MISSING_API_TOKEN: takeaways[{i}] needs a real Android/Kotlin API reference")
+
+    return violations
+
+
+def _prepare_code_card_for_render(data: dict) -> dict:
+    data = _clean_code_card_content(data)
+    data["before_code_html"] = _highlight_kotlin(
+        data["before_code"], "catch (e: Exception)", "hl-bad"
+    )
+    data["after_code_html"] = _highlight_kotlin(
+        data["after_code"], "CancellationException", "hl-good"
+    )
+    return data
+
+
 def _clean_text(s: str) -> str:
     """Strip stray markdown/comment markers and leading arrows the model sometimes leaks."""
     s = s.strip()
@@ -449,11 +575,18 @@ def generate_process_content(topic: str, post_text: str, generate_text_fn,
     """
     if "code_card" in template:
         prompt = _CODE_CARD_CONTENT_PROMPT.format(topic=topic, post_text=post_text[:2500])
+        required_keys = [
+            "category", "headline", "subhead", "tagline",
+            "before_label", "after_label", "before_code", "after_code", "takeaways",
+        ]
+        lint_fn = _lint_code_card_content
+        clean_fn = _clean_code_card_content
     else:
         prompt = _ARCHITECTURE_CONTENT_PROMPT.format(topic=topic, post_text=post_text[:2500])
-
-    required_keys = ["title_line1", "title_line2", "tagline", "hook",
-                     "stages", "steps", "flow_a_items", "flow_b_items"]
+        required_keys = ["title_line1", "title_line2", "tagline", "hook",
+                         "stages", "steps", "flow_a_items", "flow_b_items"]
+        lint_fn = lambda d: _lint_content(d, template=template)
+        clean_fn = _clean_content
 
     last_violations = []
     for attempt in range(3):
@@ -469,16 +602,22 @@ def generate_process_content(topic: str, post_text: str, generate_text_fn,
             print(f"  [infographic] Attempt {attempt + 1}: JSON parse error: {e}")
             continue
 
-        if not (all(k in data for k in required_keys)
-                and len(data.get("stages", [])) == 3
-                and len(data.get("steps", [])) == 4):
+        if "code_card" in template:
+            if not all(k in data for k in required_keys):
+                print(f"  [infographic] Attempt {attempt + 1}: Missing required code card fields")
+                continue
+            if len(data.get("takeaways", [])) < 3:
+                print(f"  [infographic] Attempt {attempt + 1}: takeaways must contain 3 items")
+                continue
+        elif not (all(k in data for k in required_keys)
+                  and len(data.get("stages", [])) == 3
+                  and len(data.get("steps", [])) == 4):
             print(f"  [infographic] Attempt {attempt + 1}: Missing required fields or wrong array lengths")
             continue
 
-        data = _clean_content(data)
+        data = clean_fn(data)
 
-        # Phase 4 & 4.6 lint
-        violations = _lint_content(data, template=template)
+        violations = lint_fn(data)
         if violations:
             last_violations = violations
             print(f"  [infographic] Attempt {attempt + 1}: Lint violations:")
@@ -496,7 +635,7 @@ def generate_process_content(topic: str, post_text: str, generate_text_fn,
     print(f"  [infographic] WARNING: Content lint failed after 3 attempts. Violations: {last_violations}")
     print(f"  [infographic] Returning best-effort content (may have abstract fields).")
     try:
-        return _clean_content(json.loads(raw))
+        return clean_fn(json.loads(raw))
     except Exception:
         raise RuntimeError(f"Failed to generate valid infographic JSON after 3 attempts. Last violations: {last_violations}")
 
@@ -508,6 +647,8 @@ def render_infographic(content: dict, out_path: str, template: str = "process_in
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
     from renderer.render import render
+    if "code_card" in template:
+        content = _prepare_code_card_for_render(content)
     return render(content, out_path, template=template)
 
 

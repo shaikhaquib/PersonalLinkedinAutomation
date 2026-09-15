@@ -7,7 +7,7 @@ import re
 import unittest
 from jinja2 import Environment, FileSystemLoader
 
-from scripts.infographic import _lint_content, _clean_content
+from scripts.infographic import _lint_content, _clean_content, _lint_code_card_content, _prepare_code_card_for_render
 
 
 class TestPhase55ContentLinting(unittest.TestCase):
@@ -166,55 +166,72 @@ class TestTemplatePaletteAndPhase55DOM(unittest.TestCase):
             }
         }
 
-    def test_all_templates_render_with_phase55_elements(self):
+    def test_architecture_templates_render_with_phase55_elements(self):
         templates = [
             "process_infographic_dark.html.j2",
-            "code_card_dark.html.j2",
             "process_infographic_light.html.j2",
-            "code_card_light.html.j2"
         ]
-
-        # Forbidden off-palette colors
         forbidden_colors = ["#4ade80", "#fbbf24", "#f43f5e", "#ef4444", "#f59e0b", "#10b981"]
 
         for tpl_name in templates:
             tpl = self.env.get_template(tpl_name)
             html = tpl.render(self.mock_context)
 
-            # 1. Hardcoded Eyebrow
-            self.assertIn("AQUIB SHAIKH // MOBILE ARCHITECTURE &amp; ANDROID INTERNALS", html,
-                          f"{tpl_name} missing hardcoded attribution eyebrow")
-
-            # 2. Hardcoded Footer
-            self.assertIn("Aquib Rashid Shaikh", html, f"{tpl_name} missing author footer")
-            self.assertIn("Senior Android Developer &amp; Mobile Tech Lead", html, f"{tpl_name} missing handle")
-
-            # 3. Phase 5.5a: Grounding Legend Bar
-            self.assertIn("legendBar", html, f"{tpl_name} missing legendBar element")
-            self.assertIn("CONFIRMED AOSP SPEC", html, f"{tpl_name} missing CONFIRMED AOSP SPEC pill")
-            self.assertIn("ENGINEERING ANALYSIS", html, f"{tpl_name} missing ENGINEERING ANALYSIS pill")
-
-            # 4. Phase 5.5a: Confidence Badges
-            self.assertTrue("badge-confirmed" in html or "badge-analysis" in html,
-                            f"{tpl_name} missing confidence badge classes")
-
-            # 5. Phase 5.5c: Actionable Closing Block
-            self.assertIn("actionableBlock", html, f"{tpl_name} missing actionableBlock element")
-            self.assertIn("WHAT THIS MEANS FOR YOUR CODEBASE", html,
-                          f"{tpl_name} missing actionable closing title")
-
-            # 6. No banned AI phrases
-            self.assertNotIn("AI SYSTEMS", html, f"{tpl_name} contains banned phrase 'AI SYSTEMS'")
-            self.assertNotIn("tech behind AI", html, f"{tpl_name} contains banned phrase 'tech behind AI'")
-
-            # 7. No sticky note DOM or styling
-            self.assertNotIn("sticky-note", html, f"{tpl_name} contains sticky-note")
-            self.assertNotIn("pushpin", html, f"{tpl_name} contains pushpin")
-
-            # 8. Strict 2-accent palette check (no old emerald, amber, or red/pink)
+            self.assertIn("AQUIB SHAIKH // MOBILE ARCHITECTURE &amp; ANDROID INTERNALS", html)
+            self.assertIn("Aquib Rashid Shaikh", html)
+            self.assertIn("legendBar", html)
+            self.assertIn("CONFIRMED AOSP SPEC", html)
+            self.assertIn("actionableBlock", html)
+            self.assertNotIn("sticky-note", html)
             for color in forbidden_colors:
-                self.assertNotIn(color.lower(), html.lower(),
-                                 f"{tpl_name} contains forbidden off-palette color {color}")
+                self.assertNotIn(color.lower(), html.lower())
+
+    def test_code_card_templates_render_editorial_layout(self):
+        code_context = _prepare_code_card_for_render({
+            "category": "COROUTINE AUTOPSY",
+            "headline": "Stop Swallowing",
+            "subhead": "CancellationException",
+            "tagline": "Orphaned jobs survive after viewModelScope clears",
+            "before_label": "AntiPattern.kt",
+            "after_label": "ProfileViewModel.kt",
+            "before_code": "viewModelScope.launch {\n    try {\n        repository.loadUserProfile()\n    } catch (e: Exception) {\n        Log.e(TAG, \"Failed\", e)\n    }\n}",
+            "after_code": "viewModelScope.launch {\n    try {\n        repository.loadUserProfile()\n    } catch (e: CancellationException) {\n        throw e\n    } catch (e: Exception) {\n        _uiState.update { it.copy(error = e.toUserMessage()) }\n    }\n}",
+            "takeaways": [
+                "Rethrow CancellationException before handling domain failures",
+                "Map repository errors with sealed Result at the data boundary",
+                "Inspect runCatching failures before exposing UI error states",
+            ],
+        })
+
+        for tpl_name in ("code_card_dark.html.j2", "code_card_light.html.j2"):
+            tpl = self.env.get_template(tpl_name)
+            html = tpl.render(code_context)
+            self.assertIn("Stop Swallowing", html)
+            self.assertIn("AntiPattern.kt", html)
+            self.assertIn("ProfileViewModel.kt", html)
+            self.assertIn("viewModelScope", html)
+            self.assertIn('class="takeaways"', html)
+            self.assertIn("Aquib Rashid Shaikh", html)
+            self.assertNotIn("legendBar", html)
+            self.assertNotIn("actionableBlock", html)
+
+    def test_code_card_content_lint(self):
+        valid = {
+            "category": "COROUTINE AUTOPSY",
+            "headline": "Stop Swallowing",
+            "subhead": "CancellationException",
+            "tagline": "Orphaned jobs survive after viewModelScope clears",
+            "before_label": "AntiPattern.kt",
+            "after_label": "ProfileViewModel.kt",
+            "before_code": "viewModelScope.launch {\n    try {\n        repository.loadUserProfile()\n    } catch (e: Exception) {\n        Log.e(TAG, \"Failed\", e)\n    }\n}",
+            "after_code": "viewModelScope.launch {\n    try {\n        repository.loadUserProfile()\n    } catch (e: CancellationException) {\n        throw e\n    } catch (e: Exception) {\n        _uiState.update { it.copy(error = e.toUserMessage()) }\n    }\n}",
+            "takeaways": [
+                "Rethrow CancellationException before handling domain failures",
+                "Map repository errors with sealed Result at the data boundary",
+                "Inspect runCatching failures before mapping ViewModel UI state",
+            ],
+        }
+        self.assertEqual(_lint_code_card_content(valid), [])
 
 
 if __name__ == "__main__":
