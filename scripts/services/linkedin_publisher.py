@@ -2,6 +2,7 @@
 LinkedIn Publisher with duplicate-detection pre-check and robust error handling.
 """
 
+import os
 import time
 import requests
 
@@ -138,9 +139,19 @@ class LinkedInPublisher:
 
         raise RuntimeError("LinkedIn API: exhausted retries.")
 
-    def post_first_comment(self, post_id: str, comment_text: str):
+    def post_first_comment(self, post_id: str, comment_text: str, delay_seconds: int = None):
         if not comment_text:
             return
+
+        if delay_seconds is None:
+            try:
+                delay_seconds = int(os.getenv("FIRST_COMMENT_DELAY_SECONDS", "180"))
+            except ValueError:
+                delay_seconds = 180
+
+        if delay_seconds > 0:
+            print(f"  [LinkedIn] Waiting {delay_seconds}s before posting first comment (human simulation)...")
+            time.sleep(delay_seconds)
 
         share_urn = post_id if post_id.startswith("urn:") else f"urn:li:ugcPost:{post_id}"
         encoded_urn = requests.utils.quote(share_urn, safe="")

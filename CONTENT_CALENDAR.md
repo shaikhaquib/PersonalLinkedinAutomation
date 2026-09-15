@@ -2,7 +2,7 @@
 
 **Owner**: Aquib Rashid Shaikh  
 **Timezone**: Asia/Kolkata (IST)  
-**Last Synchronized**: 2026-09-15 14:20:03 IST  
+**Last Synchronized**: 2026-09-15 18:40:46 IST  
 
 ---
 
@@ -15,6 +15,7 @@
 | **2026-09-16** | 09:00 | `CODE_AUTOPSY_TEARDOWN` | Silent Coroutine Cancellation Swallowing in Android ViewModel Scopes | `code_card_dark.html.j2` | 🟢 Scheduled |
 | **2026-09-17** | 09:00 | `OS_INTERNALS_DEEP_DIVE` | Preparing Native Android Libraries for 16KB Page Size Alignment in Android 15 | `process_infographic_dark.html.j2` | 🟢 Scheduled |
 | **2026-09-18** | 09:00 | `CONTRARIAN_ARCHITECTURE_CALLOUT` | The Over-Engineering Trap of 6-Layer Clean Architecture in Android Apps | `code_card_dark.html.j2` | 🟢 Scheduled |
+| **2026-09-21** | 09:00 | `OS_INTERNALS_DEEP_DIVE` | Idempotency and Android Keystore Security in Mobile Banking Transactions | `process_infographic_dark.html.j2` | 🟢 Scheduled |
 
 ---
 
