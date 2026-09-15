@@ -21,7 +21,7 @@
   }
 
   .page {
-    width: 1080px; min-height: 1180px;
+    width: 1080px;
     background: var(--paper);
     position: relative; overflow: hidden;
     font-family: 'DM Sans', sans-serif;
@@ -144,7 +144,7 @@
   .takeaways {
     list-style: none;
     display: grid; gap: 12px;
-    margin-bottom: 36px;
+    margin-bottom: 24px;
   }
 
   .takeaways li {
@@ -246,8 +246,8 @@ window.drawInfographic = function() {
 
   var page = document.getElementById('page');
   var content = document.querySelector('.content');
-  var h = Math.ceil(content.getBoundingClientRect().height + 56);
-  page.style.height = Math.max(1180, Math.min(1500, h)) + 'px';
+  var h = Math.ceil(content.getBoundingClientRect().height);
+  page.style.height = Math.max(600, Math.min(1500, h)) + 'px';
 };
 document.fonts.ready.then(function() { window.drawInfographic(); });
 </script>

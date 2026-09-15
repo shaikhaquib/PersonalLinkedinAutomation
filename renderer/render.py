@@ -19,12 +19,12 @@ ROOT      = pathlib.Path(__file__).parent
 TEMPLATE  = "process_infographic_dark.html.j2"
 OUTPUT    = ROOT / "output" / "infographic.png"
 
-# Canvas size per template.
+# Initial viewport per template — final height is trimmed to rendered content.
 _CANVAS_SIZES = {
-    "process_infographic_dark.html.j2": (1080, 1180),
-    "code_card_dark.html.j2":           (1080, 1180),
-    "process_infographic_light.html.j2":(1080, 1180),
-    "code_card_light.html.j2":          (1080, 1180),
+    "process_infographic_dark.html.j2": (1080, 900),
+    "code_card_dark.html.j2":           (1080, 900),
+    "process_infographic_light.html.j2":(1080, 900),
+    "code_card_light.html.j2":          (1080, 900),
 }
 
 
@@ -77,9 +77,9 @@ def render(content: dict, out_path: str, template: str = TEMPLATE, scale: int = 
             # Phase 2.8: Dynamically adapt viewport to rendered .page height (prevents bottom clipping)
             rendered_h = page.evaluate("""() => {
                 const el = document.querySelector('.page');
-                return el ? Math.ceil(el.getBoundingClientRect().height) : 1410;
+                return el ? Math.ceil(el.getBoundingClientRect().height) : 900;
             }""")
-            final_h = max(1410, min(1950, int(rendered_h)))
+            final_h = max(600, min(1950, int(rendered_h)))
             if final_h != height:
                 page.set_viewport_size({"width": width, "height": final_h})
                 page.wait_for_timeout(100)
