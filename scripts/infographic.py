@@ -18,89 +18,52 @@ import pathlib
 import requests
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Phase 4, 4.6 & 5.5: ARCHITECTURE BLUEPRINT CARD CONTENT PROMPT
-# Every field MUST name a real Android API, class, exception, or mechanism.
-# Abstract adjectives (deterministic, seamless, atomic, robust, erratic) are
-# banned unless immediately followed by the named mechanism causing that property.
-# BARE API NAME-DROPPING IS STRICTLY FORBIDDEN (Phase 4.6).
-# Phase 5.5a: Confidence labeling (confirmed vs analysis).
-# Phase 5.5b: Functional diagrams/mockups only (no decorative icons).
-# Phase 5.5c: Actionable closing block ("WHAT THIS MEANS FOR YOUR CODEBASE").
+# Architecture Blueprint Card v2 — editorial 3-node flow diagram
 # ─────────────────────────────────────────────────────────────────────────────
 _ARCHITECTURE_CONTENT_PROMPT = """
-Generate content for a dark-theme Android Architecture Blueprint Card infographic.
-This card visualises a technical mechanism, state flow, or OS-internals deep dive
-from the post below. The audience is Senior Android Developers, Tech Leads, and EMs.
+Generate content for a clean editorial Architecture Blueprint card for a Senior Android Developer LinkedIn post.
+The card shows a 3-step mechanism flow (INPUT → PROCESS → OUTPUT) with 3 takeaways.
 
 Topic: {topic}
 
-The LinkedIn post this card accompanies (use the SAME narrative — same APIs, same claims):
+The LinkedIn post this card accompanies:
 {post_text}
 
-STRICT FIELD REQUIREMENTS:
-- Every stage snippet MUST be a real code token, Android API call, exception name, or system state
-  (e.g. "gatt.writeCharacteristic()", "LMK SIGKILL", "StateFlow.collect", "MTU: 517 bytes").
-  NEVER use generic decorative icon descriptions like "Bluetooth icon" or "network logo" (Phase 5.5b).
-- Every step label MUST name a real Android/Kotlin class, method, or architectural concept.
-- CONFIDENCE LABELING (Phase 5.5a):
-  Every stage and every step MUST specify a "confidence" field: either "confirmed" or "analysis".
-  * "confirmed": Documented, verifiable Android/Kotlin API behavior, official Google AOSP docs, or verified hardware specification.
-  * "analysis": Engineering inference, architectural trade-off, opinion, or forward-looking recommendation.
-  At least one section must be "confirmed" and at least one must be "analysis".
-- ACTIONABLE CLOSING BLOCK (Phase 5.5c):
-  "actionable_closing" MUST be an object with "title": "WHAT THIS MEANS FOR YOUR CODEBASE" and "points": 2 concrete audit steps.
-  Each point MUST be an imperative sentence of 6-12 words naming a real API or pattern (e.g. "Audit ViewModel coroutines to rethrow CancellationException").
-  CRITICAL: DO NOT paraphrase the "hook" (Key Insight) summary — provide practical audit guidance.
-- PUNCHY, HIGH-IMPACT BULLETS (STRICT - PREVENTS MOBILE DATA OVERLOAD):
-  Every bullet point in steps[].points MUST be a concise, scannable point of 4 to 8 words.
-  NEVER write full essay-length paragraphs.
-  Each point must contain BOTH a real Android API/class/exception token AND an active verb or outcome.
-  * BARE API SYMBOLS WITHOUT ACTION STILL FORBIDDEN:
-    - REJECTED: "kotlinx.coroutines.sync.Mutex" (bare token, no context)
-    - REJECTED: "BluetoothGatt.writeCharacteristic()" (bare token, no context)
-  * ACCEPTED (concise, punchy action clauses of 4-8 words):
-    - "Overrides minBufferMs to 1,500ms startup threshold"
-    - "Caps targetBufferBytes to 5MB to prevent OOM"
-    - "Serializes writeCharacteristic calls via Mutex queue"
-    - "Prevents GC thrashing during live OTT playback"
-- BANNED abstract adjectives (unless paired with the mechanism name):
-  deterministic, seamless, atomic, robust, erratic, reliable, scalable, efficient,
-  performant, elegant, comprehensive, revolutionary, game changer, unlocks.
-- All flow_a_items and flow_b_items must be real API tokens or short mechanism names,
-  NOT generic action verbs ("check", "process", "handle", "update").
+STRICT REQUIREMENTS:
+- "category": 2-4 words ALL CAPS (e.g. "OS INTERNALS", "BLE GATT FLOW")
+- "headline": 2-4 words punchy hook
+- "subhead": 2-5 words naming the Android mechanism
+- "tagline": one line under 14 words explaining the production risk
+- "flow_nodes": exactly 3 objects with:
+  * "label": 2-4 words Title Case (stage name)
+  * "detail": real API token, exception, or system call (max 35 chars)
+  * "highlight": true for the middle (root-cause) node only, false otherwise
+- "takeaways": exactly 3 imperative bullets, 6-14 words each, naming real APIs
 
-Identify the 3-part arc that best matches the post:
-- Mechanism post:    INPUT → PROCESS → OUTPUT (e.g. BLE command → GATT queue → ACK)
-- Problem/solution:  PROBLEM STATE → ROOT CAUSE → PRODUCTION FIX
-- OS internals:      USER SPACE → KERNEL/SYSTEM → OBSERVED EFFECT
+Pick the best 3-step arc:
+- Mechanism: INPUT → PROCESS → OUTPUT
+- Problem: PROBLEM → ROOT CAUSE → FIX
+- OS internals: USER SPACE → KERNEL → OBSERVED EFFECT
 
-Return ONLY valid JSON — no markdown, no explanation:
+BANNED: generic adjectives (seamless, robust, game changer), markdown, emoji.
+Every node detail and takeaway must reference real Android/Kotlin APIs or exceptions.
+
+Return ONLY valid JSON — no markdown:
 {{
-  "title_line1": "Short punchy hook phrase (3-5 words), Title Case",
-  "title_line2": "Payoff line (3-5 words), Title Case — names the Android mechanism",
-  "tagline": "One sharp setup line under 10 words — names a real API or exception",
-  "section_label": "2-4 words all-caps e.g. 'BLE GATT INTERNALS' or 'COMPOSE STATE FLOW'",
-  "hook": "One quotable takeaway under 20 words — must name a real class or API",
-  "actionable_closing": {{
-    "title": "WHAT THIS MEANS FOR YOUR CODEBASE",
-    "points": [
-      "Audit your codebase for concrete mechanism naming real API",
-      "Refactor state flow boundary naming real Kotlin pattern"
-    ]
-  }},
-  "stages": [
-    {{"label": "2-3 words Title Case", "snippet": "real code token max 25 chars", "confidence": "confirmed"}},
-    {{"label": "2-3 words Title Case", "snippet": "real code token max 25 chars", "confidence": "confirmed"}},
-    {{"label": "2-3 words Title Case", "snippet": "real code token max 25 chars", "confidence": "analysis"}}
+  "category": "OS INTERNALS",
+  "headline": "16KB Page Size",
+  "subhead": "Native Library Alignment",
+  "tagline": "Unaligned ELF .so files crash at process startup on Android 15",
+  "flow_nodes": [
+    {{"label": "App Startup", "detail": "System.loadLibrary()", "highlight": false}},
+    {{"label": "Dynamic Linker", "detail": "readelf ALIGN 0x4000", "highlight": true}},
+    {{"label": "Fatal Crash", "detail": "UnsatisfiedLinkError", "highlight": false}}
   ],
-  "steps": [
-    {{"label": "Real Android Class Name", "confidence": "confirmed", "points": ["Concise action clause 4-8 words naming API", "Concise action clause 4-8 words naming API"]}},
-    {{"label": "Real Android Class Name", "confidence": "confirmed", "points": ["Concise action clause 4-8 words naming API", "Concise action clause 4-8 words naming API"]}},
-    {{"label": "Real Android Class Name", "confidence": "confirmed", "points": ["Concise action clause 4-8 words naming API", "Concise action clause 4-8 words naming API"]}},
-    {{"label": "Real Android Class Name", "confidence": "analysis", "points": ["Concise action clause 4-8 words naming API", "Concise action clause 4-8 words naming API"]}}
-  ],
-  "flow_a_items": ["RealClass.method()", "SystemCall", "StateToken", "APIConstant", "OutputState"],
-  "flow_b_items": ["SDK.class", "Mechanism", "Outcome", "Fix"]
+  "takeaways": [
+    "Compile NDK libs with -Wl,-z,max-page-size=16384",
+    "Audit LOAD segment alignment via readelf on every .so",
+    "Verify third-party SDKs ship 16KB-compatible native builds"
+  ]
 }}
 """.strip()
 
@@ -491,6 +454,72 @@ def _lint_code_card_content(data: dict) -> list[str]:
     return violations
 
 
+def _clean_architecture_content(data: dict) -> dict:
+    data["category"] = _clean_text(data.get("category", "")).upper() or "ANDROID ARCHITECTURE"
+    data["headline"] = _clean_text(data.get("headline", ""))
+    data["subhead"] = _clean_text(data.get("subhead", ""))
+    data["tagline"] = _clean_text(data.get("tagline", ""))
+
+    nodes = []
+    for node in data.get("flow_nodes", [])[:3]:
+        nodes.append({
+            "label": _clean_text(node.get("label", "")),
+            "detail": _clean_text(node.get("detail", "")),
+            "highlight": bool(node.get("highlight", False)),
+        })
+    while len(nodes) < 3:
+        nodes.append({"label": "Stage", "detail": "Android API call", "highlight": False})
+    if not any(n["highlight"] for n in nodes):
+        nodes[1]["highlight"] = True
+    data["flow_nodes"] = nodes
+
+    takeaways = [_clean_text(t) for t in data.get("takeaways", []) if _clean_text(t)]
+    if len(takeaways) < 3:
+        takeaways.extend([
+            "Audit critical Android execution paths for this failure mode",
+            "Validate native dependencies against current AOSP linker requirements",
+            "Refactor module boundaries before shipping production hotfixes",
+        ])
+    data["takeaways"] = takeaways[:3]
+    return data
+
+
+def _lint_architecture_content(data: dict) -> list[str]:
+    violations = []
+    required = ["category", "headline", "subhead", "tagline", "flow_nodes", "takeaways"]
+    for key in required:
+        if not data.get(key):
+            violations.append(f"MISSING_FIELD: '{key}' is required for architecture cards")
+
+    if len(data.get("flow_nodes", [])) != 3:
+        violations.append("FLOW_NODE_COUNT: flow_nodes must contain exactly 3 items")
+
+    full_text = " ".join([
+        data.get("headline", ""),
+        data.get("subhead", ""),
+        data.get("tagline", ""),
+        " ".join(n.get("detail", "") for n in data.get("flow_nodes", [])),
+        " ".join(data.get("takeaways", [])),
+    ])
+    banned_match = _BANNED_ABSTRACT.search(full_text)
+    if banned_match:
+        violations.append(f"BANNED_PHRASE: '{banned_match.group(0)}' found in content")
+
+    for i, node in enumerate(data.get("flow_nodes", [])):
+        if len(node.get("detail", "")) < 3:
+            violations.append(f"EMPTY_NODE_DETAIL: flow_nodes[{i}].detail is too short")
+        if not _has_android_token(node.get("detail", "")):
+            violations.append(f"MISSING_API_TOKEN: flow_nodes[{i}].detail needs a real Android/Kotlin API reference")
+
+    for i, tip in enumerate(data.get("takeaways", [])):
+        if len(tip.split()) < 5:
+            violations.append(f"SHORT_TAKEAWAY: takeaways[{i}] must be at least 5 words")
+        if not _has_android_token(tip):
+            violations.append(f"MISSING_API_TOKEN: takeaways[{i}] needs a real Android/Kotlin API reference")
+
+    return violations
+
+
 def _prepare_code_card_for_render(data: dict) -> dict:
     data = _clean_code_card_content(data)
     data["before_code_html"] = _highlight_kotlin(
@@ -583,10 +612,9 @@ def generate_process_content(topic: str, post_text: str, generate_text_fn,
         clean_fn = _clean_code_card_content
     else:
         prompt = _ARCHITECTURE_CONTENT_PROMPT.format(topic=topic, post_text=post_text[:2500])
-        required_keys = ["title_line1", "title_line2", "tagline", "hook",
-                         "stages", "steps", "flow_a_items", "flow_b_items"]
-        lint_fn = lambda d: _lint_content(d, template=template)
-        clean_fn = _clean_content
+        required_keys = ["category", "headline", "subhead", "tagline", "flow_nodes", "takeaways"]
+        lint_fn = _lint_architecture_content
+        clean_fn = _clean_architecture_content
 
     last_violations = []
     for attempt in range(3):
@@ -609,10 +637,14 @@ def generate_process_content(topic: str, post_text: str, generate_text_fn,
             if len(data.get("takeaways", [])) < 3:
                 print(f"  [infographic] Attempt {attempt + 1}: takeaways must contain 3 items")
                 continue
-        elif not (all(k in data for k in required_keys)
-                  and len(data.get("stages", [])) == 3
-                  and len(data.get("steps", [])) == 4):
-            print(f"  [infographic] Attempt {attempt + 1}: Missing required fields or wrong array lengths")
+        elif not all(k in data for k in required_keys):
+            print(f"  [infographic] Attempt {attempt + 1}: Missing required architecture card fields")
+            continue
+        elif len(data.get("flow_nodes", [])) != 3:
+            print(f"  [infographic] Attempt {attempt + 1}: flow_nodes must contain 3 items")
+            continue
+        elif len(data.get("takeaways", [])) < 3:
+            print(f"  [infographic] Attempt {attempt + 1}: takeaways must contain 3 items")
             continue
 
         data = clean_fn(data)

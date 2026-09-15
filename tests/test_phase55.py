@@ -7,7 +7,14 @@ import re
 import unittest
 from jinja2 import Environment, FileSystemLoader
 
-from scripts.infographic import _lint_content, _clean_content, _lint_code_card_content, _prepare_code_card_for_render
+from scripts.infographic import (
+    _lint_content,
+    _clean_content,
+    _lint_code_card_content,
+    _lint_architecture_content,
+    _clean_architecture_content,
+    _prepare_code_card_for_render,
+)
 
 
 class TestPhase55ContentLinting(unittest.TestCase):
@@ -166,25 +173,58 @@ class TestTemplatePaletteAndPhase55DOM(unittest.TestCase):
             }
         }
 
-    def test_architecture_templates_render_with_phase55_elements(self):
-        templates = [
-            "process_infographic_dark.html.j2",
-            "process_infographic_light.html.j2",
-        ]
+    def test_architecture_templates_render_editorial_layout(self):
+        arch_context = _clean_architecture_content({
+            "category": "OS INTERNALS",
+            "headline": "16KB Page Size",
+            "subhead": "Native Library Alignment",
+            "tagline": "Unaligned ELF .so files crash at process startup on Android 15",
+            "flow_nodes": [
+                {"label": "App Startup", "detail": "native System.loadLibrary()", "highlight": False},
+                {"label": "Dynamic Linker", "detail": "NDK LOAD segment 0x4000", "highlight": True},
+                {"label": "Fatal Crash", "detail": "UnsatisfiedLinkError", "highlight": False},
+            ],
+            "takeaways": [
+                "Compile NDK libs with -Wl,-z,max-page-size=16384",
+                "Audit native .so LOAD segments via readelf before release",
+                "Verify third-party SDKs ship 16KB-compatible native builds",
+            ],
+        })
         forbidden_colors = ["#4ade80", "#fbbf24", "#f43f5e", "#ef4444", "#f59e0b", "#10b981"]
 
-        for tpl_name in templates:
+        for tpl_name in ("process_infographic_dark.html.j2", "process_infographic_light.html.j2"):
             tpl = self.env.get_template(tpl_name)
-            html = tpl.render(self.mock_context)
-
-            self.assertIn("AQUIB SHAIKH // MOBILE ARCHITECTURE &amp; ANDROID INTERNALS", html)
+            html = tpl.render(arch_context)
+            self.assertIn("16KB Page Size", html)
+            self.assertIn("Native Library Alignment", html)
+            self.assertIn("UnsatisfiedLinkError", html)
+            self.assertIn('class="flow-row"', html)
+            self.assertIn('class="takeaways"', html)
             self.assertIn("Aquib Rashid Shaikh", html)
-            self.assertIn("legendBar", html)
-            self.assertIn("CONFIRMED AOSP SPEC", html)
-            self.assertIn("actionableBlock", html)
+            self.assertNotIn("legendBar", html)
+            self.assertNotIn("actionableBlock", html)
             self.assertNotIn("sticky-note", html)
             for color in forbidden_colors:
                 self.assertNotIn(color.lower(), html.lower())
+
+    def test_architecture_content_lint(self):
+        valid = _clean_architecture_content({
+            "category": "OS INTERNALS",
+            "headline": "16KB Page Size",
+            "subhead": "Native Library Alignment",
+            "tagline": "Unaligned ELF .so files crash at process startup on Android 15",
+            "flow_nodes": [
+                {"label": "App Startup", "detail": "native System.loadLibrary()", "highlight": False},
+                {"label": "Dynamic Linker", "detail": "NDK LOAD segment 0x4000", "highlight": True},
+                {"label": "Fatal Crash", "detail": "UnsatisfiedLinkError", "highlight": False},
+            ],
+            "takeaways": [
+                "Compile NDK libs with -Wl,-z,max-page-size=16384",
+                "Audit native .so LOAD segments via readelf before release",
+                "Verify third-party SDKs ship 16KB-compatible native builds",
+            ],
+        })
+        self.assertEqual(_lint_architecture_content(valid), [])
 
     def test_code_card_templates_render_editorial_layout(self):
         code_context = _prepare_code_card_for_render({
