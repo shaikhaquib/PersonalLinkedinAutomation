@@ -2,7 +2,7 @@ name: Autonomous LinkedIn Agent
 
 on:
   schedule:
-     - cron: '0 9 * * *'
+    - cron: '0 9 * * *'
       timezone: 'Asia/Kolkata'
   workflow_dispatch:
     inputs:
