@@ -32,6 +32,7 @@ from scripts.services.telegram_notifier import TelegramNotifier
 from scripts.services.linkedin_publisher import LinkedInPublisher
 from scripts.services.calendar_manager import CalendarManager
 from scripts.services.text_formatter import format_linkedin_text
+from scripts.services.schedule_rotator import get_weekday_rotation
 
 # ── API Keys & Settings ───────────────────────────────────────────────────────
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -238,7 +239,13 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
             ]
 
         # Step 3: Candidate Evaluation Loop
-        print("\n[ Step 2 ] Finding and evaluating suitable topic...")
+        rotation = get_weekday_rotation()
+        target_archetype = force_archetype or rotation["preferred_archetype"]
+        target_theme = theme if theme != "dark" else rotation["theme"]
+        print(f"\n[ Step 2 ] Finding and evaluating suitable topic...")
+        print(f"  [Weekday Matrix] {rotation['day_name']} Theme: {rotation['theme_name']}")
+        print(f"  Target Archetype: {target_archetype} | Visual: {rotation['format_desc']}")
+
         writing_agent = WritingAgent(generate_text)
         quality_reviewer = QualityReviewer(generate_text)
         max_attempts = SETTINGS.get("max_review_attempts", 3)
@@ -261,7 +268,7 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
 
             print("\n[ Step 3 ] Generating post draft with Senior Android Developer persona...")
             post_text, first_comment, archetype_id = writing_agent.write_post(
-                topic, source_context, archetype_id=force_archetype
+                topic, source_context, archetype_id=target_archetype
             )
             print(f"  Archetype selected: {archetype_id}")
 
@@ -308,7 +315,7 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
         # Step 6: Image Decision & Generation (Phase 3: routes to correct template)
         print("\n[ Step 5 ] Evaluating infographic requirement...")
         decision_agent = ImageDecisionAgent(generate_text)
-        needs_image, reason, selected_template = decision_agent.decide(topic, post_text, archetype_id, theme=theme)
+        needs_image, reason, selected_template = decision_agent.decide(topic, post_text, archetype_id, theme=target_theme)
         print(f"  Image Required: {needs_image} ({reason})")
         if needs_image:
             print(f"  Template selected: {selected_template}")

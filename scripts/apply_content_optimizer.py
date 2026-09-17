@@ -74,6 +74,8 @@ When simple CRUD reads require a one-line passthrough UseCase, your codebase dro
 
 💡 Where does your engineering leadership draw the line between architectural purity and pragmatic productivity?
 
+Scaling high-impact mobile platforms or modernizing your Android stack? Open to exchanging notes with mobile engineering leaders — feel free to reach out via DM.
+
 .
 .
 .
@@ -93,6 +95,8 @@ Cryptographic security and network idempotency are entirely different failure do
 • Never regenerate idempotency tokens during network retries or automatic exponential backoff routines.
 
 💡 How does your mobile team safeguard transaction idempotency when hardware cryptographic signatures survive process death on flaky networks?
+
+Building or scaling high-stakes mobile apps (FinTech / Android)? Open to exchanging notes with mobile engineering leaders — feel free to reach out via DM.
 
 .
 .

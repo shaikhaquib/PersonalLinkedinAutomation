@@ -42,6 +42,7 @@ from scripts.services.calendar_manager import CalendarManager
 from scripts.storage.history_manager import HistoryManager
 from scripts.services.linkedin_publisher import LinkedInPublisher
 from scripts.services.telegram_notifier import TelegramNotifier
+from scripts.services.schedule_rotator import get_weekday_rotation
 import scripts.infographic as ig
 
 LINKEDIN_ACCESS_TOKEN = os.getenv("LINKEDIN_ACCESS_TOKEN")
@@ -73,15 +74,26 @@ def schedule_post_pipeline(date_str: str, time_str: str = "09:00",
         ("High-Performance JavaScript Bridge Architecture for Android WebViews", "CODE_AUTOPSY_TEARDOWN"),
     ]
 
+    try:
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        rotation = get_weekday_rotation(dt)
+    except Exception:
+        rotation = get_weekday_rotation()
+
+    if not archetype_id:
+        archetype_id = rotation["preferred_archetype"]
+
+    if theme == "dark" and rotation["theme"] != "dark":
+        theme = rotation["theme"]
+
     if not topic:
         chosen = curated_topics[0]
-        topic, default_arch = chosen
-        if not archetype_id:
-            archetype_id = default_arch
+        topic = chosen[0]
 
+    print(f"  Target Day: {rotation['day_name']} -> {rotation['theme_name']}")
     print(f"  Topic     : {topic}")
     print(f"  Archetype : {archetype_id}")
-    print(f"  Theme     : {theme.upper()}")
+    print(f"  Theme     : {theme.upper()} ({rotation['format_desc']})")
 
     # Step 1: Write post
     print("\n[ Step 1/4 ] Generating post draft with Senior Android Developer persona...")

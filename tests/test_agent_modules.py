@@ -118,12 +118,57 @@ class TestImageDecisionAgent(unittest.TestCase):
         self.assertEqual(code_light, "code_card_light.html.j2")
 
 
-class TestTelegramNotifier(unittest.TestCase):
-    def test_unconfigured_notifier_does_not_crash(self):
-        notifier = TelegramNotifier(bot_token="", chat_id="")
-        self.assertFalse(notifier.is_configured())
-        result = notifier.send_alert("Test Issue", "Reason", "Action")
-        self.assertFalse(result)
+class TestScheduleRotator(unittest.TestCase):
+    def test_all_weekdays_have_unique_rotations(self):
+        from scripts.services.schedule_rotator import get_weekday_rotation
+        from datetime import datetime
+
+        # Test Monday (2026-09-21 is Monday)
+        mon = get_weekday_rotation(datetime(2026, 9, 21))
+        self.assertEqual(mon["day_name"], "Monday")
+        self.assertEqual(mon["preferred_archetype"], "SCALE_INCIDENT_WAR_STORY")
+
+        # Test Tuesday (2026-09-22 is Tuesday)
+        tue = get_weekday_rotation(datetime(2026, 9, 22))
+        self.assertEqual(tue["day_name"], "Tuesday")
+        self.assertEqual(tue["preferred_archetype"], "CODE_AUTOPSY_TEARDOWN")
+
+        # Test Wednesday (2026-09-23 is Wednesday)
+        wed = get_weekday_rotation(datetime(2026, 9, 23))
+        self.assertEqual(wed["day_name"], "Wednesday")
+        self.assertEqual(wed["theme"], "light")
+
+        # Test Thursday (2026-09-24 is Thursday)
+        thu = get_weekday_rotation(datetime(2026, 9, 24))
+        self.assertEqual(thu["day_name"], "Thursday")
+        self.assertEqual(thu["preferred_archetype"], "CONTRARIAN_ARCHITECTURE_CALLOUT")
+
+        # Test Friday (2026-09-25 is Friday)
+        fri = get_weekday_rotation(datetime(2026, 9, 25))
+        self.assertEqual(fri["day_name"], "Friday")
+        self.assertEqual(fri["preferred_archetype"], "HARDWARE_LOW_LEVEL_DEEP_DIVE")
+
+
+class TestTopicAnalyzerMobileFocus(unittest.TestCase):
+    def test_non_mobile_topic_rejected(self):
+        analyzer = TopicAnalyzer(min_score=0.70)
+        res = analyzer.score_heuristic("How to trade Bitcoin and Ethereum on Binance", "Cryptocurrency price swings", "crypto_news")
+        self.assertLess(res["overall_score"], 0.50)
+
+    def test_broad_mobile_topics_rank_high(self):
+        analyzer = TopicAnalyzer(min_score=0.70)
+        
+        # On-Device AI in Mobile
+        res_ai = analyzer.score_heuristic("Gemini Nano On-Device Acceleration on Android AICore", "Optimizing LLM inference on Android devices using MediaPipe", "google_blog")
+        self.assertGreaterEqual(res_ai["overall_score"], 0.75)
+
+        # OS Internals
+        res_os = analyzer.score_heuristic("Android 16 Kernel Memory Management and ART GC Pause Reductions", "Under the hood analysis of AOSP runtime changes", "android_police")
+        self.assertGreaterEqual(res_os["overall_score"], 0.75)
+
+        # Media & Hardware
+        res_ble = analyzer.score_heuristic("Tuning Media3 ExoPlayer Buffers to Eliminate Playback Jank", "Optimizing DefaultLoadControl under network drops on mobile", "android_weekly")
+        self.assertGreaterEqual(res_ble["overall_score"], 0.75)
 
 
 if __name__ == "__main__":

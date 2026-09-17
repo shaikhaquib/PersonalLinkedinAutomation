@@ -13,16 +13,40 @@
       "category": "kotlin"
     },
     {
-      "name": "Google Developers Blog",
+      "name": "Android Weekly",
       "type": "rss",
-      "url": "https://developers.googleblog.com/feeds/posts/default?alt=rss",
-      "category": "engineering"
+      "url": "https://androidweekly.net/rss",
+      "category": "deep_dive"
+    },
+    {
+      "name": "Android Police",
+      "type": "rss",
+      "url": "https://www.androidpolice.com/feed/",
+      "category": "breaking_news"
+    },
+    {
+      "name": "9to5Google",
+      "type": "rss",
+      "url": "https://9to5google.com/feed/",
+      "category": "breaking_news"
+    },
+    {
+      "name": "Square Mobile Engineering Blog",
+      "type": "rss",
+      "url": "https://developer.squareup.com/blog/rss.xml",
+      "category": "fintech_payments"
     },
     {
       "name": "Android Studio Releases",
       "type": "rss",
       "url": "https://androidstudio.googleblog.com/feeds/posts/default?alt=rss",
       "category": "tools"
+    },
+    {
+      "name": "Google Developers Blog",
+      "type": "rss",
+      "url": "https://developers.googleblog.com/feeds/posts/default?alt=rss",
+      "category": "engineering"
     },
     {
       "name": "Firebase Blog",

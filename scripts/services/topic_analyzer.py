@@ -1,17 +1,41 @@
 """
-Topic Analyzer & Scorer.
-Evaluates candidate topics against relevance, freshness, technical depth, and persona fit.
+Topic Analyzer & Scorer for Senior Android & Mobile Engineering.
+Evaluates candidate topics against relevance, freshness, technical depth,
+and mobile engineering authority.
+Guarantees 100% Android/Mobile relevance while exploring the full breadth of
+the mobile ecosystem (OS internals, On-Device AI, Compose, Hardware/BLE, Media, Architecture).
 """
 
 import re
 import json
 
+ANDROID_MOBILE_GATEWAY_KEYWORDS = {
+    "android", "mobile", "kotlin", "compose", "jetpack", "kmp", "aosp", "ndk",
+    "apk", "aar", "gradle", "play store", "google play"
+}
+
 ANDROID_CORE_KEYWORDS = {
+    # Core Architecture & Modern Android
     "compose", "jetpack", "kotlin", "coroutine", "flow", "viewmodel", "lifecycle",
-    "architecture", "security", "keystore", "biometric", "performance", "jank",
-    "startup", "baseline", "profile", "gradle", "k2", "room", "workmanager",
-    "memory", "leak", "r8", "proguard", "fintech", "banking", "idempotency",
-    "crypto", "ipc", "binder", "ndk", "aosp", "masvs", "owasp", "cert", "pinning"
+    "architecture", "stateflow", "kmp", "multiplatform", "navigation", "hilt",
+    # OS & Runtime Internals (Android 15/16)
+    "aosp", "ndk", "art", "binder", "lmk", "anr", "crash", "page size", "16kb",
+    "memory", "gc", "doze", "foreground service", "android 15", "android 16",
+    # Tooling, Build & Runtime Performance
+    "r8", "proguard", "gradle", "k2", "baseline profile", "startup", "macrobenchmark",
+    "jank", "leakcanary", "profiler",
+    # Hardware, Media & Emerging Mobile Tech
+    "ble", "bluetooth", "gatt", "exoplayer", "media3", "camerax", "camera",
+    "nfc", "on-device", "gemini nano", "aicore", "foldable", "adaptive", "sensor",
+    # Security, Network & Persistence
+    "security", "keystore", "biometric", "masvs", "integrity", "room", "datastore",
+    "workmanager", "idempotency", "pinning", "okhttp", "ktor"
+}
+
+HIGH_IMPACT_TREND_INDICATORS = {
+    "breaking", "deprecated", "migration", "crash", "outage", "vulnerability",
+    "under the hood", "internals", "optimization", "deep dive", "stable",
+    "release", "alpha", "beta", "new in", "announcing", "architecture"
 }
 
 GENERIC_HYPE_KEYWORDS = {
@@ -27,32 +51,42 @@ class TopicAnalyzer:
 
     def score_heuristic(self, title: str, summary: str, source: str) -> dict:
         text = f"{title} {summary}".lower()
-        words = set(re.findall(r"\b[a-z0-9]+\b", text))
+        words = set(re.findall(r"\b[a-z0-9_-]+\b", text))
+
+        # 0. Mobile Gateway Check: Must have clear Android or Mobile connection
+        has_mobile_anchor = any(k in text for k in ANDROID_MOBILE_GATEWAY_KEYWORDS) or any(k in words for k in ANDROID_CORE_KEYWORDS)
+        if not has_mobile_anchor:
+            # Non-mobile content is rejected
+            return {
+                "overall_score": 0.20,
+                "relevance": 0.20,
+                "freshness": 0.50,
+                "technical_value": 0.20,
+                "originality": 0.30,
+                "personal_relevance": 0.10
+            }
 
         # 1. Relevance Score (0.0 to 1.0)
         core_matches = len(words.intersection(ANDROID_CORE_KEYWORDS))
-        relevance = min(1.0, 0.4 + (core_matches * 0.15))
+        relevance = min(1.0, 0.45 + (core_matches * 0.12))
         if any(bad in text for bad in GENERIC_HYPE_KEYWORDS):
             relevance *= 0.3
 
-        # 2. Freshness Score (0.0 to 1.0)
-        # RSS feeds typically contain current content; boost official release notes or announcements
-        freshness = 0.85 if any(term in text for term in ["release", "update", "alpha", "beta", "stable", "announcing", "new in"]) else 0.75
+        # 2. Freshness Score (0.0 to 1.0) - Boost breaking changes and releases
+        is_trending = any(term in text for term in ["release", "update", "alpha", "beta", "stable", "announcing", "new in", "breaking"])
+        freshness = 0.90 if is_trending else 0.75
 
-        # 3. Technical Value Score (0.0 to 1.0)
-        # High value for architectural, performance, and deep engineering topics
-        tech_indicators = ["how", "internals", "optimization", "architecture", "migration", "fix", "pattern", "under the hood", "deep dive"]
-        has_tech = any(indicator in text for indicator in tech_indicators)
-        tech_value = 0.85 if has_tech else 0.70
+        # 3. Technical Value Score (0.0 to 1.0) - Deep dives, internals, architecture
+        has_tech = any(indicator in text for indicator in HIGH_IMPACT_TREND_INDICATORS)
+        tech_value = 0.90 if has_tech else 0.72
 
-        # 4. Originality Score (0.0 to 1.0)
-        # Avoid generic "Getting started" posts
-        is_beginner = any(b in text for b in ["getting started", "introduction to", "basics of", "for beginners"])
-        originality = 0.60 if is_beginner else 0.80
+        # 4. Originality Score (0.0 to 1.0) - Avoid generic beginner tutorials
+        is_beginner = any(b in text for b in ["getting started", "introduction to", "basics of", "for beginners", "hello world"])
+        originality = 0.50 if is_beginner else 0.85
 
-        # 5. Personal Relevance Score (0.0 to 1.0)
-        # Senior Android developer fit
-        personal_relevance = 0.90 if any(k in words for k in ["kotlin", "compose", "performance", "security", "architecture", "fintech"]) else 0.65
+        # 5. Personal / Senior Mobile Authority (0.0 to 1.0)
+        high_value_domains = {"compose", "performance", "security", "architecture", "ble", "media3", "16kb", "art", "kmp", "ai", "nano", "aicore", "exoplayer"}
+        personal_relevance = 0.95 if any(k in words for k in high_value_domains) else 0.75
 
         # Overall weighted score
         overall = (
@@ -76,6 +110,7 @@ class TopicAnalyzer:
         """Optional deep scoring with Gemini when ambiguity exists."""
         prompt = f"""
 You are evaluating a candidate topic for a Senior Android Developer's LinkedIn post.
+The post must be 100% about Android or Mobile engineering.
 Topic: {title}
 Summary: {summary}
 
@@ -90,7 +125,6 @@ Evaluate and return ONLY valid JSON with scores between 0.0 and 1.0:
 """
         try:
             raw = llm_generate_fn(prompt, "You are an expert technical content evaluator.")
-            # extract json block
             match = re.search(r"\{.*\}", raw, re.DOTALL)
             if match:
                 data = json.loads(match.group(0))
