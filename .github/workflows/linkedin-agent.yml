@@ -2,8 +2,10 @@ name: Autonomous LinkedIn Agent
 
 on:
   schedule:
-    - cron: '0 9 * * *'
-      timezone: 'Asia/Kolkata'
+    # Primary: 3:25 AM UTC = 8:55 AM IST (off-peak minute — avoids :00/:30 queue congestion)
+    - cron: '25 3 * * *'
+    # Backup:  3:55 AM UTC = 9:25 AM IST (catches GitHub scheduler drops/delays on primary)
+    - cron: '55 3 * * *'
   workflow_dispatch:
     inputs:
       topic:
