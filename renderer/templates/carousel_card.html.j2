@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  @page {
+    size: 1080px 1350px;
+    margin: 0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1080px;
+    font-family: 'DM Sans', sans-serif;
+    background: {{ '#12141a' if theme != 'light' else '#f8fafc' }};
+    color: {{ '#f3f4f6' if theme != 'light' else '#0f172a' }};
+  }
+
+  .slide {
+    width: 1080px;
+    height: 1350px;
+    page-break-after: always;
+    position: relative;
+    overflow: hidden;
+    padding: 72px 64px 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: {{ '#12141a' if theme != 'light' else '#f8fafc' }};
+  }
+
+  .slide::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: {{
+      'radial-gradient(ellipse 70% 45% at 15% 0%, rgba(124,108,255,0.14), transparent 55%), radial-gradient(ellipse 50% 35% at 90% 10%, rgba(52,211,153,0.09), transparent 50%)'
+      if theme != 'light' else
+      'radial-gradient(ellipse 70% 45% at 15% 0%, rgba(99,102,241,0.08), transparent 55%), radial-gradient(ellipse 50% 35% at 90% 10%, rgba(16,185,129,0.06), transparent 50%)'
+    }};
+    pointer-events: none;
+  }
+
+  /* Header */
+  .slide-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 2;
+    padding-bottom: 24px;
+    border-bottom: 1px solid {{ 'rgba(255,255,255,0.08)' if theme != 'light' else 'rgba(0,0,0,0.08)' }};
+  }
+
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: {{ '#7c6cff' if theme != 'light' else '#4f46e5' }};
+  }
+
+  .page-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: {{ 'rgba(255,255,255,0.06)' if theme != 'light' else 'rgba(0,0,0,0.05)' }};
+    color: {{ '#9ca3af' if theme != 'light' else '#64748b' }};
+  }
+
+  /* Body */
+  .slide-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    z-index: 2;
+    padding: 40px 0;
+  }
+
+  .slide-title {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1.2px;
+    margin-bottom: 24px;
+    color: {{ '#ffffff' if theme != 'light' else '#0f172a' }};
+  }
+
+  .slide-subtitle {
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: {{ '#9ca3af' if theme != 'light' else '#475569' }};
+    margin-bottom: 36px;
+  }
+
+  /* Cards list */
+  .point-card {
+    background: {{ '#1a1d26' if theme != 'light' else '#ffffff' }};
+    border: 1px solid {{ 'rgba(255,255,255,0.08)' if theme != 'light' else 'rgba(0,0,0,0.08)' }};
+    border-radius: 16px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .point-card.accent {
+    border-left: 5px solid {{ '#34d399' if theme != 'light' else '#10b981' }};
+  }
+
+  .point-icon {
+    font-size: 24px;
+    line-height: 1.2;
+    flex-shrink: 0;
+  }
+
+  .point-content h4 {
+    font-size: 22px;
+    font-weight: 700;
+    color: {{ '#ffffff' if theme != 'light' else '#0f172a' }};
+    margin-bottom: 6px;
+  }
+
+  .point-content p {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: {{ '#9ca3af' if theme != 'light' else '#64748b' }};
+  }
+
+  /* Code block */
+  .code-container {
+    background: {{ '#0d1117' if theme != 'light' else '#f1f5f9' }};
+    border: 1px solid {{ 'rgba(255,255,255,0.1)' if theme != 'light' else 'rgba(0,0,0,0.1)' }};
+    border-radius: 14px;
+    padding: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    line-height: 1.6;
+    color: {{ '#e6edf3' if theme != 'light' else '#1e293b' }};
+    margin-top: 20px;
+    white-space: pre-wrap;
+  }
+
+  /* Footer */
+  .slide-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 2;
+    padding-top: 24px;
+    border-top: 1px solid {{ 'rgba(255,255,255,0.08)' if theme != 'light' else 'rgba(0,0,0,0.08)' }};
+  }
+
+  .author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .author-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: {{ '#ffffff' if theme != 'light' else '#0f172a' }};
+  }
+
+  .author-role {
+    font-size: 13px;
+    font-weight: 500;
+    color: {{ '#9ca3af' if theme != 'light' else '#64748b' }};
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .swipe-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: {{ '#7c6cff' if theme != 'light' else '#4f46e5' }};
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+{% for slide in slides %}
+<div class="slide">
+  <div class="slide-header">
+    <div class="badge">{{ badge or 'ANDROID ARCHITECTURE DEEP DIVE' }}</div>
+    <div class="page-num">{{ loop.index }} / {{ slides|length }}</div>
+  </div>
+
+  <div class="slide-body">
+    <h2 class="slide-title">{{ slide.title }}</h2>
+    {% if slide.subtitle %}
+    <p class="slide-subtitle">{{ slide.subtitle }}</p>
+    {% endif %}
+
+    {% if slide.points %}
+      {% for pt in slide.points %}
+      <div class="point-card {{ 'accent' if loop.first else '' }}">
+        <span class="point-icon">{{ pt.icon or '→' }}</span>
+        <div class="point-content">
+          <h4>{{ pt.label }}</h4>
+          <p>{{ pt.desc }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    {% endif %}
+
+    {% if slide.code %}
+    <div class="code-container">{{ slide.code }}</div>
+    {% endif %}
+  </div>
+
+  <div class="slide-footer">
+    <div class="author-info">
+      <div class="author-name">{{ author or 'Aquib Rashid Shaikh' }}</div>
+      <div class="author-role">{{ handle or 'Senior Android & Mobile Tech Lead' }}</div>
+    </div>
+    <div class="swipe-hint">
+      {% if not loop.last %}
+      SWIPE NEXT →
+      {% else %}
+      SHARE & COMMENT 💬
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+</body>
+</html>

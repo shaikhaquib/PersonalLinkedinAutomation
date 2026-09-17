@@ -203,8 +203,12 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
                     try:
                         import scripts.infographic as ig
                         print(f"  [Notice] Pre-rendered image not found on disk ({raw_png}). Re-rendering dynamically...")
-                        content = ig.generate_process_content(topic, post_text, generate_text, template=selected_template)
-                        png_path = ig.render_infographic(content, candidate_rel, template=selected_template)
+                        if "carousel" in selected_template:
+                            content = ig.generate_carousel_content(topic, post_text, generate_text, theme="dark")
+                            png_path = ig.render_carousel_pdf(content, candidate_rel, template=selected_template)
+                        else:
+                            content = ig.generate_process_content(topic, post_text, generate_text, template=selected_template)
+                            png_path = ig.render_infographic(content, candidate_rel, template=selected_template)
                         print(f"  Dynamic render successful: {png_path}")
                     except Exception as re_err:
                         print(f"  [WARN] Dynamic render failed: {re_err}. Proceeding without image.")
@@ -324,13 +328,20 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
         if needs_image and selected_template:
             try:
                 import scripts.infographic as ig
-                out_png = os.path.join(PROJECT_ROOT, "renderer", "output", "infographic.png")
-                print("  Rendering infographic with Playwright...")
-                content = ig.generate_process_content(topic, post_text, generate_text, template=selected_template)
-                png_path = ig.render_infographic(content, out_png, template=selected_template)
-                print(f"  Infographic successfully rendered: {png_path}")
+                if "carousel" in selected_template:
+                    out_pdf = os.path.join(PROJECT_ROOT, "renderer", "output", "carousel.pdf")
+                    print("  Rendering multi-slide swipeable PDF carousel with Playwright...")
+                    content = ig.generate_carousel_content(topic, post_text, generate_text, theme=target_theme)
+                    png_path = ig.render_carousel_pdf(content, out_pdf, template=selected_template)
+                    print(f"  Carousel PDF successfully rendered: {png_path}")
+                else:
+                    out_png = os.path.join(PROJECT_ROOT, "renderer", "output", "infographic.png")
+                    print("  Rendering infographic with Playwright...")
+                    content = ig.generate_process_content(topic, post_text, generate_text, template=selected_template)
+                    png_path = ig.render_infographic(content, out_png, template=selected_template)
+                    print(f"  Infographic successfully rendered: {png_path}")
             except Exception as e:
-                print(f"  [WARN] Infographic rendering failed ({e}). Gracefully continuing text-only.")
+                print(f"  [WARN] Visual rendering failed ({e}). Gracefully continuing text-only.")
                 png_path = None
 
     # Format post text and first comment to native LinkedIn Unicode format (bold, clean code)
@@ -354,15 +365,20 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
     if dry_run:
         # Phase 7: Log exact LinkedIn payload without hitting the API
         author_urn = f"urn:li:person:{LINKEDIN_PERSON_ID}"
+        is_pdf = bool(png_path and png_path.endswith(".pdf"))
         dry_payload = {
             "author": author_urn,
             "lifecycleState": "PUBLISHED",
             "specificContent": {
                 "com.linkedin.ugc.ShareContent": {
                     "shareCommentary": {"text": post_text},
-                    "shareMediaCategory": "IMAGE" if png_path else "NONE",
+                    "shareMediaCategory": "DOCUMENT" if is_pdf else ("IMAGE" if png_path else "NONE"),
                     **({
-                        "media": [{"status": "READY", "media": "[IMAGE_ASSET_URN_PLACEHOLDER]"}]
+                        "media": [{
+                            "status": "READY",
+                            "media": "[DOCUMENT_ASSET_URN_PLACEHOLDER]" if is_pdf else "[IMAGE_ASSET_URN_PLACEHOLDER]",
+                            **({"title": topic[:60]} if is_pdf else {})
+                        }]
                     } if png_path else {}),
                 }
             },
@@ -374,7 +390,7 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
         print("=" * 60)
         print(_json.dumps(dry_payload, indent=2, ensure_ascii=False))
         print(f"\n  FIRST_COMMENT (would be posted): {first_comment}")
-        print(f"  PNG: {png_path or 'text-only'}")
+        print(f"  MEDIA: {png_path or 'text-only'}")
         # Dry-run Telegram notification
         if notifier.is_configured():
             notifier.send_alert(
@@ -392,16 +408,20 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
     publisher = LinkedInPublisher(LINKEDIN_ACCESS_TOKEN, LINKEDIN_PERSON_ID, notifier=notifier)
 
     image_urn = None
+    media_type = "IMAGE"
     if png_path and os.path.exists(png_path):
         try:
             import scripts.infographic as ig
-            print("  Uploading image to LinkedIn media assets...")
+            is_pdf = png_path.lower().endswith(".pdf")
+            media_type = "DOCUMENT" if is_pdf else "IMAGE"
+            media_name = "PDF carousel document" if is_pdf else "image"
+            print(f"  Uploading {media_name} to LinkedIn media assets...")
             image_urn = ig.upload_to_linkedin(png_path, LINKEDIN_ACCESS_TOKEN, LINKEDIN_PERSON_ID)
         except Exception as e:
-            print(f"  [WARN] Image upload failed ({e}). Proceeding with text-only post.")
+            print(f"  [WARN] Media upload failed ({e}). Proceeding with text-only post.")
             image_urn = None
 
-    post_id = publisher.publish(post_text, image_urn=image_urn)
+    post_id = publisher.publish(post_text, image_urn=image_urn, media_type=media_type, title=topic[:60])
     print(f"  Success! Post published to LinkedIn. ID: {post_id}")
 
     if first_comment:

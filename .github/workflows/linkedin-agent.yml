@@ -107,7 +107,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: infographic-${{ github.run_id }}
-          path: renderer/output/*.png
+          path: |
+            renderer/output/*.png
+            renderer/output/*.pdf
           if-no-files-found: ignore
           retention-days: 14
 

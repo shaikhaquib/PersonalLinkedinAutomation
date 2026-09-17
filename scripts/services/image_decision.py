@@ -44,6 +44,7 @@ _TEMPLATE_ARCH_DARK  = "process_infographic_dark.html.j2"
 _TEMPLATE_CODE_DARK  = "code_card_dark.html.j2"
 _TEMPLATE_ARCH_LIGHT = "process_infographic_light.html.j2"
 _TEMPLATE_CODE_LIGHT = "code_card_light.html.j2"
+_TEMPLATE_CAROUSEL   = "carousel_card.html.j2"
 
 # Backward-compatible defaults
 _TEMPLATE_ARCH = _TEMPLATE_ARCH_DARK
@@ -56,7 +57,7 @@ class ImageDecisionAgent:
 
     def decide(self, topic: str, post_text: str, archetype_id: str = "", theme: str = "dark") -> tuple[bool, str, str]:
         """
-        Decides image type based on topic, archetype, and requested theme.
+        Decides image type based on topic, archetype, length, and requested theme.
         Returns (should_generate: bool, reason: str, template_name: str).
         template_name is one of the permitted templates or "" (text-only).
         """
@@ -65,13 +66,18 @@ class ImageDecisionAgent:
 
         combined = f"{topic} {post_text} {archetype_id}".lower()
 
-        # 1. Check if text-only
+        # 1. Check if content is long and benefits from a swipeable multi-slide carousel
+        is_long = len(post_text) >= 1100 or post_text.count("•") >= 4
+        if is_long:
+            return True, f"Deep multi-point content ({len(post_text)} chars / {post_text.count('•')} takeaways) — Swipeable Multi-Slide PDF Carousel selected for maximum dwell time.", _TEMPLATE_CAROUSEL
+
+        # 2. Check if text-only
         if any(t in combined for t in TEXT_ONLY_TOPICS) and not any(
             t in combined for t in ARCHITECTURE_CARD_TOPICS | CODE_CARD_TOPICS
         ):
             return False, "Opinion/culture/career post — text-only performs better.", ""
 
-        # 2. Code Card — Code Autopsy or Contrarian anti-pattern archetype
+        # 3. Code Card — Code Autopsy or Contrarian anti-pattern archetype
         if archetype_id in ("CODE_AUTOPSY_TEARDOWN", "CONTRARIAN_ARCHITECTURE_CALLOUT"):
             return True, f"Code teardown/anti-pattern archetype — Syntax-Highlighted Code Card ({theme}) selected.", code_template
 

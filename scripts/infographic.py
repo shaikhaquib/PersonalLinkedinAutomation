@@ -684,11 +684,138 @@ def render_infographic(content: dict, out_path: str, template: str = "process_in
     return render(content, out_path, template=template)
 
 
-def upload_to_linkedin(png_path: str, access_token: str, person_id: str) -> str:
+def render_carousel_pdf(content: dict, out_pdf_path: str, template: str = "carousel_card.html.j2") -> str:
+    """Render the carousel content dict to a multi-page PDF using Playwright. Returns PDF path."""
+    import pathlib
+    from jinja2 import Environment, FileSystemLoader
+    from playwright.sync_api import sync_playwright
+
+    root = pathlib.Path(__file__).parent.parent
+    template_dir = root / "renderer" / "templates"
+    env = Environment(loader=FileSystemLoader(str(template_dir)), autoescape=True)
+    tpl = env.get_template(template)
+    html = tpl.render(**content)
+
+    os.makedirs(os.path.dirname(os.path.abspath(out_pdf_path)), exist_ok=True)
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(viewport={"width": 1080, "height": 1350})
+        page.set_content(html, wait_until="networkidle")
+        page.pdf(
+            path=out_pdf_path,
+            width="1080px",
+            height="1350px",
+            print_background=True,
+        )
+        browser.close()
+
+    print(f"  [carousel] Rendered multi-page PDF carousel → {out_pdf_path}")
+    return out_pdf_path
+
+
+def generate_carousel_content(topic: str, post_text: str, generate_fn, theme: str = "dark") -> dict:
+    """Generate structured slide content for long posts to render as a swipeable carousel."""
+    prompt = f"""Convert this technical Android LinkedIn post into a 4-to-5 slide visual carousel.
+Topic: {topic}
+Post text:
+{post_text}
+
+Return ONLY valid JSON with this exact schema:
+{{
+  "badge": "ANDROID ARCHITECTURE DEEP DIVE",
+  "theme": "{theme}",
+  "topic": "{topic}",
+  "slides": [
+    {{
+      "title": "Short Hook Headline",
+      "subtitle": "Clear 1-line problem statement",
+      "points": [
+        {{"icon": "⚠️", "label": "The Core Issue", "desc": "Explanation of what breaks"}},
+        {{"icon": "💥", "label": "The Failure Mode", "desc": "Runtime crash behavior"}}
+      ],
+      "code": null
+    }},
+    {{
+      "title": "Why Legacy Patterns Fail",
+      "subtitle": "The technical constraint at the OS or runtime layer",
+      "points": [
+        {{"icon": "⚙️", "label": "Under the Hood", "desc": "Specific Android mechanism"}}
+      ],
+      "code": null
+    }},
+    {{
+      "title": "The Production Fix",
+      "subtitle": "Step-by-step engineering pattern",
+      "points": [
+        {{"icon": "✅", "label": "Key Rule", "desc": "Pragmatic rule of thumb"}}
+      ],
+      "code": "val safeData = repository.observe()\\n  .catch {{ emit(Error) }}"
+    }},
+    {{
+      "title": "Key Takeaways & Audit",
+      "subtitle": "What to audit in your Android codebase today",
+      "points": [
+        {{"icon": "🔍", "label": "Audit Checklist", "desc": "Concrete check for engineering teams"}},
+        {{"icon": "🚀", "label": "Performance Impact", "desc": "Expected stability/speed win"}}
+      ],
+      "code": null
+    }}
+  ]
+}}
+"""
+    try:
+        raw = generate_fn(
+            prompt,
+            "You are an expert technical designer creating mobile developer carousels. Return ONLY valid JSON, no markdown code fences."
+        )
+        raw_clean = re.sub(r"^```json\s*", "", raw.strip(), flags=re.MULTILINE)
+        raw_clean = re.sub(r"^```\s*", "", raw_clean, flags=re.MULTILINE)
+        data = json.loads(raw_clean)
+        data["theme"] = theme
+        return data
+    except Exception as e:
+        print(f"  [carousel] Fallback content generation: {e}")
+        paragraphs = [p.strip() for p in post_text.split("\n\n") if p.strip()]
+        slides = [
+            {
+                "title": topic[:60],
+                "subtitle": paragraphs[0] if paragraphs else topic,
+                "points": [
+                    {"icon": "⚠️", "label": "Production Challenge", "desc": paragraphs[1] if len(paragraphs) > 1 else topic}
+                ]
+            },
+            {
+                "title": "The Technical Mechanism",
+                "subtitle": "Under the hood Android behavior",
+                "points": [
+                    {"icon": "⚙️", "label": "Mechanism", "desc": p[:140]} for p in paragraphs[2:5]
+                ] or [{"icon": "→", "label": "Analysis", "desc": topic}]
+            },
+            {
+                "title": "The Production Fixes",
+                "subtitle": "Architectural solution & best practices",
+                "points": [
+                    {"icon": "✅", "label": "Actionable Pattern", "desc": paragraphs[-2] if len(paragraphs) > 2 else "Apply in CI/CD"}
+                ]
+            }
+        ]
+        return {
+            "badge": "ANDROID ARCHITECTURE DEEP DIVE",
+            "theme": theme,
+            "topic": topic,
+            "slides": slides,
+        }
+
+
+def upload_to_linkedin(file_path: str, access_token: str, person_id: str) -> str:
     """
-    Upload PNG to LinkedIn via the media upload API.
+    Upload PNG image or PDF document to LinkedIn via the media upload API.
     Returns the asset URN to embed in the ugcPost.
     """
+    is_pdf = file_path.lower().endswith(".pdf")
+    recipe = "urn:li:digitalmediaRecipe:feedshare-document" if is_pdf else "urn:li:digitalmediaRecipe:feedshare-image"
+    content_type = "application/pdf" if is_pdf else "image/png"
+
     headers_json = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type":  "application/json",
@@ -701,7 +828,7 @@ def upload_to_linkedin(png_path: str, access_token: str, person_id: str) -> str:
         headers=headers_json,
         json={
             "registerUploadRequest": {
-                "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],
+                "recipes": [recipe],
                 "owner":   f"urn:li:person:{person_id}",
                 "serviceRelationships": [{
                     "relationshipType": "OWNER",
@@ -718,17 +845,18 @@ def upload_to_linkedin(png_path: str, access_token: str, person_id: str) -> str:
     ]["uploadUrl"]
     asset_urn = val["asset"]
 
-    # Step 2 — upload image bytes
-    with open(png_path, "rb") as f:
-        img_bytes = f.read()
+    # Step 2 — upload file bytes
+    with open(file_path, "rb") as f:
+        file_bytes = f.read()
 
     put = requests.put(
         upload_url,
-        headers={"Authorization": f"Bearer {access_token}", "Content-Type": "image/png"},
-        data=img_bytes,
+        headers={"Authorization": f"Bearer {access_token}", "Content-Type": content_type},
+        data=file_bytes,
         timeout=60,
     )
     put.raise_for_status()
 
-    print(f"  [infographic] Uploaded → {asset_urn}")
+    media_label = "PDF Document Carousel" if is_pdf else "PNG Infographic"
+    print(f"  [media] Uploaded {media_label} → {asset_urn}")
     return asset_urn

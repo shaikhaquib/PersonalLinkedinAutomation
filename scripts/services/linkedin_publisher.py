@@ -52,7 +52,7 @@ class LinkedInPublisher:
 
         return None
 
-    def publish(self, post_text: str, image_urn: str = None) -> str:
+    def publish(self, post_text: str, image_urn: str = None, media_type: str = "IMAGE", title: str = "") -> str:
         """Publish post to LinkedIn personal profile with retry verification."""
         post_text = format_linkedin_text(post_text)
         if not self.access_token or not self.person_id:
@@ -64,10 +64,14 @@ class LinkedInPublisher:
         author_urn = f"urn:li:person:{self.person_id}"
 
         if image_urn:
+            category = "DOCUMENT" if media_type == "DOCUMENT" else "IMAGE"
+            media_item = {"status": "READY", "media": image_urn}
+            if category == "DOCUMENT":
+                media_item["title"] = title or "Android Architecture Deep Dive"
             share_content = {
                 "shareCommentary": {"text": post_text},
-                "shareMediaCategory": "IMAGE",
-                "media": [{"status": "READY", "media": image_urn}],
+                "shareMediaCategory": category,
+                "media": [media_item],
             }
         else:
             share_content = {
