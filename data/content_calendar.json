@@ -62,10 +62,10 @@
     "image_path": "renderer/output/scheduled_2026-09-17_0900.png",
     "template": "process_infographic_dark.html.j2",
     "theme": "dark",
-    "status": "scheduled",
+    "status": "published",
     "created_at": "2026-09-13T22:58:59.197701+05:30",
-    "published_at": null,
-    "linkedin_post_id": null
+    "published_at": "2026-09-17T16:22:38.275842+05:30",
+    "linkedin_post_id": "urn:li:share:7506303343049408514"
   },
   {
     "id": "post_2026-09-18_0900",
