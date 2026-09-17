@@ -16,6 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.services.calendar_manager import CalendarManager
+from scripts.services.text_formatter import format_linkedin_text
 
 OPTIMIZED_POSTS = {
     "post_2026-09-16_0900": """Catching generic Exception inside your ViewModel coroutines silently destroys structured concurrency in production.
@@ -107,7 +108,7 @@ def main():
     for item in items:
         pid = item.get("id")
         if pid in OPTIMIZED_POSTS and item.get("status") == "scheduled":
-            item["post_text"] = OPTIMIZED_POSTS[pid]
+            item["post_text"] = format_linkedin_text(OPTIMIZED_POSTS[pid])
             updated += 1
             print(f"Updated post text for {pid} ({item.get('topic')})")
 

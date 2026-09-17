@@ -6,6 +6,8 @@ import os
 import time
 import requests
 
+from scripts.services.text_formatter import format_linkedin_text
+
 MAX_RETRIES = 3
 RETRY_BASE_SECONDS = 15
 
@@ -28,6 +30,7 @@ class LinkedInPublisher:
         Check if the post already exists in the author's recent UGC posts.
         Protects against duplicate creation after network timeouts.
         """
+        post_text = format_linkedin_text(post_text)
         try:
             author_urn = f"urn:li:person:{self.person_id}"
             encoded_author = requests.utils.quote(f"List({author_urn})", safe="")
@@ -51,6 +54,7 @@ class LinkedInPublisher:
 
     def publish(self, post_text: str, image_urn: str = None) -> str:
         """Publish post to LinkedIn personal profile with retry verification."""
+        post_text = format_linkedin_text(post_text)
         if not self.access_token or not self.person_id:
             msg = "Missing LINKEDIN_ACCESS_TOKEN or LINKEDIN_PERSON_ID."
             if self.notifier:
@@ -142,6 +146,8 @@ class LinkedInPublisher:
     def post_first_comment(self, post_id: str, comment_text: str, delay_seconds: int = None):
         if not comment_text:
             return
+
+        comment_text = format_linkedin_text(comment_text)
 
         if delay_seconds is None:
             try:

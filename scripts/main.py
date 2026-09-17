@@ -31,6 +31,7 @@ from scripts.services.image_decision import ImageDecisionAgent
 from scripts.services.telegram_notifier import TelegramNotifier
 from scripts.services.linkedin_publisher import LinkedInPublisher
 from scripts.services.calendar_manager import CalendarManager
+from scripts.services.text_formatter import format_linkedin_text
 
 # ── API Keys & Settings ───────────────────────────────────────────────────────
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -324,6 +325,11 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
             except Exception as e:
                 print(f"  [WARN] Infographic rendering failed ({e}). Gracefully continuing text-only.")
                 png_path = None
+
+    # Format post text and first comment to native LinkedIn Unicode format (bold, clean code)
+    post_text = format_linkedin_text(post_text)
+    if first_comment:
+        first_comment = format_linkedin_text(first_comment)
 
     # Step 7: Publishing or Preview or Dry-Run
     if preview:
