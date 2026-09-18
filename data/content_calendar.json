@@ -79,10 +79,10 @@
     "image_path": "renderer/output/scheduled_2026-09-18_0900.png",
     "template": "code_card_dark.html.j2",
     "theme": "dark",
-    "status": "scheduled",
+    "status": "published",
     "created_at": "2026-09-13T22:59:20.610746+05:30",
-    "published_at": null,
-    "linkedin_post_id": null
+    "published_at": "2026-09-18T11:47:57.906170+05:30",
+    "linkedin_post_id": "urn:li:share:7506596607971479552"
   },
   {
     "id": "post_2026-09-21_0900",
