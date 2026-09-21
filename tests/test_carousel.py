@@ -19,7 +19,7 @@ class TestCarousel(unittest.TestCase):
         needs_img, reason, tpl = agent.decide(short_topic, short_post)
         self.assertNotEqual(tpl, "carousel_card.html.j2")
 
-        # Long post (>= 1150 chars or 4+ bullets) -> carousel
+        # Technical post -> selects standard Architecture Blueprint card
         long_topic = "Android 15 16KB Memory Page Size Migration"
         long_post = (
             "Android 15's 16KB memory page size support will immediately crash unaligned native libraries at process startup.\n\n"
@@ -36,8 +36,8 @@ class TestCarousel(unittest.TestCase):
         )
         needs_img, reason, tpl = agent.decide(long_topic, long_post)
         self.assertTrue(needs_img)
-        self.assertEqual(tpl, "carousel_card.html.j2")
-        self.assertIn("Carousel", reason)
+        self.assertEqual(tpl, "process_infographic_dark.html.j2")
+        self.assertIn("Architecture Blueprint Card", reason)
 
     def test_generate_and_render_carousel_pdf(self):
         topic = "Preparing Native Android Libraries for 16KB Page Sizes"

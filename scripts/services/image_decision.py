@@ -66,12 +66,7 @@ class ImageDecisionAgent:
 
         combined = f"{topic} {post_text} {archetype_id}".lower()
 
-        # 1. Check if content is long and benefits from a swipeable multi-slide carousel
-        is_long = len(post_text) >= 1100 or post_text.count("•") >= 4
-        if is_long:
-            return True, f"Deep multi-point content ({len(post_text)} chars / {post_text.count('•')} takeaways) — Swipeable Multi-Slide PDF Carousel selected for maximum dwell time.", _TEMPLATE_CAROUSEL
-
-        # 2. Check if text-only
+        # 1. Check if text-only
         if any(t in combined for t in TEXT_ONLY_TOPICS) and not any(
             t in combined for t in ARCHITECTURE_CARD_TOPICS | CODE_CARD_TOPICS
         ):

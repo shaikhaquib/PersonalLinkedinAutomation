@@ -418,8 +418,18 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
             print(f"  Uploading {media_name} to LinkedIn media assets...")
             image_urn = ig.upload_to_linkedin(png_path, LINKEDIN_ACCESS_TOKEN, LINKEDIN_PERSON_ID)
         except Exception as e:
-            print(f"  [WARN] Media upload failed ({e}). Proceeding with text-only post.")
-            image_urn = None
+            print(f"  [WARN] Media upload failed ({e}). Attempting fallback to standard infographic PNG...")
+            try:
+                import scripts.infographic as ig
+                out_png = os.path.join(PROJECT_ROOT, "renderer", "output", "infographic.png")
+                content = ig.generate_process_content(topic, post_text, generate_text, template="process_infographic_dark.html.j2")
+                fallback_png = ig.render_infographic(content, out_png, template="process_infographic_dark.html.j2")
+                image_urn = ig.upload_to_linkedin(fallback_png, LINKEDIN_ACCESS_TOKEN, LINKEDIN_PERSON_ID)
+                media_type = "IMAGE"
+                print(f"  Fallback infographic successfully rendered and uploaded: {image_urn}")
+            except Exception as fe:
+                print(f"  [WARN] Fallback image upload also failed ({fe}). Proceeding with text-only post.")
+                image_urn = None
 
     post_id = publisher.publish(post_text, image_urn=image_urn, media_type=media_type, title=topic[:60])
     print(f"  Success! Post published to LinkedIn. ID: {post_id}")
