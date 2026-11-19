@@ -1,41 +1,45 @@
 """
 Quality Review Agent.
-Evaluates generated drafts against technical depth, tone authenticity, and AI clichés.
+Scores technical accuracy, human voice, felt-pain hook, and engagement fitness.
 """
 
 import json
 import re
 
 QUALITY_REVIEW_SYSTEM_PROMPT = """
-You are a ruthless Senior Mobile Engineering Director and editor reviewing a LinkedIn post written by a Senior Android Engineer.
-Your job is to ensure this post is technically accurate, reads like a real developer wrote it over coffee, and is completely free of generic AI-generated fluff, marketing jargon, and fake personal stories.
+You are a ruthless LinkedIn editor for a Senior Android engineer posting to mid–senior
+Android peers. Reject documentation voice and API-soup openers even if technically correct.
 
-Evaluate the draft on these exact metrics (scored 1 to 10):
-1. technical_accuracy (1-10): Is the Android/Kotlin concept factually accurate and technically sound?
-2. naturalness (1-10): Does it sound like a real person talking, rather than a LinkedIn influencer or marketing copy?
-3. originality (1-10): Does it present a fresh perspective, practical tip, or non-obvious insight?
-4. usefulness (1-10): Will an Android/mobile engineer learn something practical from reading this?
-5. linkedin_fit (1-10): Is the formatting scannable, mobile-friendly (1-2 sentences per paragraph), with no asterisks?
-6. ai_like_language (1-10): Does it use AI clichés ("In today's fast-paced world", "game changer", "revolutionary", "unlock", "delve", "testament", "Three weeks ago", "Two weeks ago", "Six weeks ago", "On Tuesday, I ran", "Confession:", "Plot twist:")? (LOWER IS BETTER: 1 = zero AI fluff, 10 = completely AI-sounding).
+Score 1–10:
+1. technical_accuracy — Android/Kotlin facts sound
+2. naturalness — sounds like a real engineer, not a whitepaper or AI essay
+3. originality — non-obvious, worth a comment
+4. usefulness — mid–senior engineer can apply something
+5. linkedin_fit — scannable, mobile-friendly, no asterisks
+6. ai_like_language — LOWER IS BETTER (1 = human, 10 = AI sludge)
+7. engagement_hook — first 2 lines name a felt problem people notice (crash, jank, Play reject, freeze, payment fail, angry users, battery). API-first lectures score <=4.
 
-ADDITIONAL FAIL CONDITIONS (mark passed: false if any apply):
-- Post starts with a time-anchor phrase: "Three weeks ago", "Two weeks ago", "Four weeks ago", "Six weeks ago", "Yesterday", "On [day of week],", "Days ago, I"
-- Post uses markdown bold (**text**) or italic (_text_) anywhere
-- Post starts with "Confession:", "Plot twist:", "Unpopular opinion:"
-- FACTUAL ERROR: Associates status 133 with GATT_FAILURE (BluetoothGatt.GATT_FAILURE is 257; status 133 is undocumented)
-- FACTUAL ERROR: Attributes GATT single-transaction serialization to HCI instead of ATT (Attribute Protocol)
-- Ungrounded constant: Pairs a named SDK constant with an unverified numeric value without SDK grounding
-- BARE API BULLET (Phase 4.6): Bullet points (→) that are just bare class/method names or constants without full explanatory sentence structure (min 6 words explaining cause/effect).
+FAIL if any apply:
+- Time-anchor opener ("Three weeks ago", "Yesterday", "On Tuesday,")
+- Markdown ** or _
+- Confession: / Plot twist: / Unpopular opinion:
+- First 2 lines are stacked jargon with no human pain (e.g. "Streaming raw unbounded generative UI schemas...")
+- Reads like SDK documentation or a conference abstract
+- Tutorial clone: pain intro + mechanism paragraph + exactly three →/• fix bullets + recruiter line (too templated)
+- GATT_FAILURE associated with status 133
+- GATT serialization attributed to HCI instead of ATT
+- Bare API bullets (<6 words, no verb)
 
-Thresholds for PASS:
-- technical_accuracy >= 8
+PASS thresholds:
+- technical_accuracy >= 7
 - naturalness >= 8
 - originality >= 7
 - usefulness >= 7
 - linkedin_fit >= 7
 - ai_like_language <= 3
+- engagement_hook >= 7
 
-Return ONLY valid JSON matching this exact structure:
+Return ONLY JSON:
 {
   "technical_accuracy": 9,
   "naturalness": 8,
@@ -43,10 +47,17 @@ Return ONLY valid JSON matching this exact structure:
   "usefulness": 8,
   "linkedin_fit": 8,
   "ai_like_language": 2,
+  "engagement_hook": 8,
   "passed": true,
-  "feedback": "Concise feedback for rewrite if passed is false"
+  "feedback": "Concise rewrite guidance if failed"
 }
 """
+
+_JARGON_SOUP = re.compile(
+    r"\b(schema|pipeline|serialization|recomposition|latching|hal\d|surfaceflinger|"
+    r"hardwarebuffer|untyped|generative|idempotency|choreographer)\b",
+    re.I,
+)
 
 
 class QualityReviewer:
@@ -54,49 +65,58 @@ class QualityReviewer:
         self.generate_fn = llm_generate_fn
 
     def review(self, post_text: str, topic: str) -> dict:
-        # Programmatic factual accuracy checks (Phase 4.5)
-        if re.search(r'gatt_failure.*?133|133.*?gatt_failure', post_text, re.I):
-            return {
-                "technical_accuracy": 3,
-                "naturalness": 7,
-                "originality": 7,
-                "usefulness": 6,
-                "linkedin_fit": 7,
-                "ai_like_language": 2,
-                "passed": False,
-                "feedback": "Factual error: BluetoothGatt.GATT_FAILURE is integer 257. Status 133 is undocumented; do not associate GATT_FAILURE with status 133."
-            }
+        if re.search(r"gatt_failure.*?133|133.*?gatt_failure", post_text, re.I):
+            return self._fail(
+                "Factual error: BluetoothGatt.GATT_FAILURE is 257; status 133 is undocumented.",
+                technical_accuracy=3,
+            )
 
-        if re.search(r'hci.*?(?:one\s+active|single\s+active|serializ|gatt\s+transaction)', post_text, re.I):
-            return {
-                "technical_accuracy": 4,
-                "naturalness": 7,
-                "originality": 7,
-                "usefulness": 6,
-                "linkedin_fit": 7,
-                "ai_like_language": 2,
-                "passed": False,
-                "feedback": "Factual error: GATT serialization constraint belongs to the ATT (Attribute Protocol) request-response layer, not HCI."
-            }
+        if re.search(r"hci.*?(?:one\s+active|single\s+active|serializ|gatt\s+transaction)", post_text, re.I):
+            return self._fail(
+                "Factual error: GATT serialization belongs to ATT, not HCI.",
+                technical_accuracy=4,
+            )
 
-        # Programmatic bare API bullet check (Phase 4.6)
+        # LinkedIn does not render Markdown — fail raw MD before it hits the calendar
+        if re.search(r"\*\*[^*]+\*\*|__[^_]+__|`[^`]+`|^#{1,6}\s+", post_text, re.M):
+            return self._fail(
+                "Markdown detected (** / __ / ` / headers). LinkedIn does not render MD — use plain text.",
+                linkedin_fit=3,
+            )
+        if re.search(r"(?m)^[\*\-_=~`]+$", post_text):
+            return self._fail(
+                "Orphan markdown residue line (lone * / ---). Strip it — LinkedIn shows it as noise.",
+                linkedin_fit=4,
+            )
+
         for line in post_text.splitlines():
             line_str = line.strip()
-            if line_str.startswith(('→', '•', '-', '*')):
-                clean_bullet = re.sub(r'^[→•\-\*\d\.\s]+', '', line_str).strip()
+            if line_str.startswith(("→", "•", "-", "*")):
+                clean_bullet = re.sub(r"^[→•\-\*\d\.\s]+", "", line_str).strip()
                 if clean_bullet:
                     words = clean_bullet.split()
-                    if len(words) < 6 and re.search(r'[A-Za-z0-9_]+\.[A-Za-z0-9_]+|[A-Z][a-zA-Z]+(Exception|Error|Manager|Service|View|Gatt)', clean_bullet):
-                        return {
-                            "technical_accuracy": 5,
-                            "naturalness": 7,
-                            "originality": 7,
-                            "usefulness": 6,
-                            "linkedin_fit": 7,
-                            "ai_like_language": 2,
-                            "passed": False,
-                            "feedback": f"Bare API name-dropping in bullet '{clean_bullet}'. Every bullet must be a complete clause (min 6 words) explaining mechanism with an active verb."
-                        }
+                    if len(words) < 6 and re.search(
+                        r"[A-Za-z0-9_]+\.[A-Za-z0-9_]+|[A-Z][a-zA-Z]+(Exception|Error|Manager|Service|View|Gatt)",
+                        clean_bullet,
+                    ):
+                        return self._fail(
+                            f"Bare API bullet '{clean_bullet}'. Use a full clause (6+ words).",
+                            usefulness=6,
+                        )
+
+        # Programmatic engagement-hook sniff on first ~2 non-empty lines
+        opener = " ".join([ln.strip() for ln in post_text.splitlines() if ln.strip()][:2])
+        pain_words = (
+            "crash", "anr", "freeze", "frozen", "jank", "lag", "users", "review",
+            "payment", "battery", "reject", "fail", "angry", "slow", "stuck",
+            "broken", "drop", "kill", "leak", "outage", "complaint",
+        )
+        if opener and _JARGON_SOUP.search(opener) and not any(p in opener.lower() for p in pain_words):
+            return self._fail(
+                "Opener is API/jargon soup with no felt pain. Rewrite first 2 lines around a user/team problem.",
+                naturalness=5,
+                engagement_hook=3,
+            )
 
         prompt = f"""
 Post Topic: {topic}
@@ -104,7 +124,7 @@ Post Topic: {topic}
 Draft to review:
 {post_text}
 
-Review this draft against all guidelines and return the JSON evaluation.
+Review against all guidelines and return the JSON evaluation.
 """
         try:
             raw = self.generate_fn(prompt, QUALITY_REVIEW_SYSTEM_PROMPT)
@@ -117,23 +137,39 @@ Review this draft against all guidelines and return the JSON evaluation.
                 use = int(data.get("usefulness", 5))
                 lfit = int(data.get("linkedin_fit", 5))
                 ai_lang = int(data.get("ai_like_language", 5))
+                hook = int(data.get("engagement_hook", 5))
 
-                # Check strict thresholds
                 passed = (
-                    ta >= 8 and
-                    nat >= 8 and
-                    orig >= 7 and
-                    use >= 7 and
-                    lfit >= 7 and
-                    ai_lang <= 3
+                    ta >= 7
+                    and nat >= 8
+                    and orig >= 7
+                    and use >= 7
+                    and lfit >= 7
+                    and ai_lang <= 3
+                    and hook >= 7
                 )
                 data["passed"] = passed
+                data["engagement_hook"] = hook
                 return data
         except Exception as e:
             print(f"  [QualityReview] Evaluation error ({e}). Using heuristic fallback.")
 
-        # Heuristic fallback
         return self._heuristic_review(post_text)
+
+    def _fail(self, feedback: str, **overrides) -> dict:
+        base = {
+            "technical_accuracy": 7,
+            "naturalness": 7,
+            "originality": 7,
+            "usefulness": 7,
+            "linkedin_fit": 7,
+            "ai_like_language": 2,
+            "engagement_hook": 5,
+            "passed": False,
+            "feedback": feedback,
+        }
+        base.update(overrides)
+        return base
 
     def _heuristic_review(self, post_text: str) -> dict:
         text_lower = post_text.lower()
@@ -141,14 +177,18 @@ Review this draft against all guidelines and return the JSON evaluation.
             "in today's", "game changer", "revolutionary", "unlock", "delve",
             "testament", "10x", "productivity", "exciting times", "seamless",
             "three weeks ago", "two weeks ago", "four weeks ago", "six weeks ago",
-            "days ago, i", "yesterday i ", "on monday,", "on tuesday,", "on wednesday,",
-            "on thursday,", "on friday,", "confession:", "plot twist:", "unpopular opinion:"
+            "days ago, i", "yesterday i ", "on monday,", "on tuesday,", "confession:",
+            "plot twist:", "unpopular opinion:",
         ]
         has_cliche = any(c in text_lower for c in cliches)
         has_asterisks = "*" in post_text
         length = len(post_text)
+        pain = any(
+            p in text_lower
+            for p in ("crash", "anr", "jank", "freeze", "users", "payment", "battery", "reject")
+        )
 
-        passed = (not has_cliche) and (not has_asterisks) and (600 <= length <= 2500)
+        passed = (not has_cliche) and (not has_asterisks) and (600 <= length <= 2500) and pain
         return {
             "technical_accuracy": 8,
             "naturalness": 8 if not has_cliche else 5,
@@ -156,6 +196,7 @@ Review this draft against all guidelines and return the JSON evaluation.
             "usefulness": 8,
             "linkedin_fit": 8 if not has_asterisks else 5,
             "ai_like_language": 2 if not has_cliche else 6,
+            "engagement_hook": 8 if pain else 4,
             "passed": passed,
-            "feedback": "Avoid markdown asterisks and generic AI cliches." if not passed else ""
+            "feedback": "Lead with felt pain; avoid AI cliches and markdown." if not passed else "",
         }

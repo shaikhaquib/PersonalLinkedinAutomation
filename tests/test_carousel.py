@@ -36,8 +36,9 @@ class TestCarousel(unittest.TestCase):
         )
         needs_img, reason, tpl = agent.decide(long_topic, long_post)
         self.assertTrue(needs_img)
-        self.assertEqual(tpl, "process_infographic_dark.html.j2")
-        self.assertIn("Architecture Blueprint Card", reason)
+        # 16KB / Play / native crash cues → clean product bitmap card
+        self.assertEqual(tpl, "aware_graphic_dark.html.j2")
+        self.assertIn("bitmap", reason.lower())
 
     def test_generate_and_render_carousel_pdf(self):
         topic = "Preparing Native Android Libraries for 16KB Page Sizes"

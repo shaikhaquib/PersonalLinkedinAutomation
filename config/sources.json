@@ -13,10 +13,22 @@
       "category": "kotlin"
     },
     {
-      "name": "Android Weekly",
+      "name": "Android Authority",
       "type": "rss",
-      "url": "https://androidweekly.net/rss",
-      "category": "deep_dive"
+      "url": "https://www.androidauthority.com/feed/",
+      "category": "breaking_news"
+    },
+    {
+      "name": "The Verge Google",
+      "type": "rss",
+      "url": "https://www.theverge.com/google/rss/index.xml",
+      "category": "breaking_news"
+    },
+    {
+      "name": "Ars Technica",
+      "type": "rss",
+      "url": "https://feeds.arstechnica.com/arstechnica/technology-lab",
+      "category": "breaking_news"
     },
     {
       "name": "Android Police",
@@ -29,12 +41,6 @@
       "type": "rss",
       "url": "https://9to5google.com/feed/",
       "category": "breaking_news"
-    },
-    {
-      "name": "Square Mobile Engineering Blog",
-      "type": "rss",
-      "url": "https://developer.squareup.com/blog/rss.xml",
-      "category": "fintech_payments"
     },
     {
       "name": "Android Studio Releases",
@@ -53,6 +59,24 @@
       "type": "rss",
       "url": "https://firebase.blog/rss.xml",
       "category": "backend_mobile"
+    },
+    {
+      "name": "ProAndroidDev",
+      "type": "rss",
+      "url": "https://proandroiddev.com/feed",
+      "category": "deep_dive"
+    },
+    {
+      "name": "Android Developers Medium",
+      "type": "rss",
+      "url": "https://medium.com/feed/androiddevelopers",
+      "category": "android"
+    },
+    {
+      "name": "Square Mobile Engineering Blog",
+      "type": "rss",
+      "url": "https://developer.squareup.com/blog/rss.xml",
+      "category": "fintech_payments"
     },
     {
       "name": "OWASP Mobile Security",

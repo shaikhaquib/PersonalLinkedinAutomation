@@ -29,12 +29,13 @@ def to_unicode_bold(text: str) -> str:
 
 def format_linkedin_text(text: str) -> str:
     """
-    Convert Markdown formatting into native LinkedIn-friendly Unicode text:
-    1. Triple backtick code blocks -> stripped of fences, preserving content.
-    2. **bold** and __bold__ -> Unicode Sans-Serif Bold characters.
-    3. `inline code` -> clean plain text without backtick noise.
-    4. Markdown header markers (### ) -> stripped or bolded.
-    5. Stray italics (*word* or _word_) -> plain text.
+    Convert Markdown into LinkedIn-native text (LinkedIn does not render MD):
+    1. Triple backtick fences -> content only
+    2. **bold** / __bold__ -> Unicode Mathematical Sans-Serif Bold
+    3. `inline code` -> plain text (backticks removed)
+    4. Markdown headers / links / list markers cleaned
+    5. Stray italic *word* / _word_ -> plain
+    6. Orphan asterisk / underscore lines removed (common LLM residue)
     """
     if not text:
         return ""
@@ -42,18 +43,33 @@ def format_linkedin_text(text: str) -> str:
     # 1. Strip triple-backtick code fences
     text = re.sub(r"```[a-zA-Z0-9_-]*\n?(.*?)\n?```", r"\1", text, flags=re.DOTALL)
 
-    # 2. Convert **bold** and __bold__ to Unicode bold
+    # 2. Convert **bold** and __bold__ to Unicode bold (LinkedIn-visible emphasis)
     text = re.sub(r"\*\*(.+?)\*\*", lambda m: to_unicode_bold(m.group(1)), text)
     text = re.sub(r"__(.+?)__", lambda m: to_unicode_bold(m.group(1)), text)
 
     # 3. Strip backticks around inline code snippets
     text = re.sub(r"`([^`]+)`", r"\1", text)
 
-    # 4. Remove Markdown header markers at the start of a line (e.g., "### Header" -> "Header")
+    # 4. Markdown links [label](url) -> label (url) or just label
+    text = re.sub(r"\[([^\]]+)\]\((https?://[^)]+)\)", r"\1 (\2)", text)
+    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
+
+    # 5. Remove Markdown header markers at the start of a line
     text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)
 
-    # 5. Clean stray italic markers around single words/phrases if any
+    # 6. Clean stray italic markers around single words/phrases
     text = re.sub(r"(?<!\w)\*([^*]+?)\*(?!\w)", r"\1", text)
     text = re.sub(r"(?<!\w)_([^_]+?)_(?!\w)", r"\1", text)
 
-    return text
+    # 7. Drop orphan markdown residue lines (lone *, **, -, ---)
+    lines = []
+    for line in text.splitlines():
+        if re.fullmatch(r"[\*\-_=~`]+", line.strip() or ""):
+            continue
+        lines.append(line)
+    text = "\n".join(lines)
+
+    # 8. Collapse 3+ blank lines; trim trailing whitespace on each line
+    text = re.sub(r"[ \t]+\n", "\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()

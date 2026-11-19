@@ -32,7 +32,7 @@ from scripts.services.telegram_notifier import TelegramNotifier
 from scripts.services.linkedin_publisher import LinkedInPublisher
 from scripts.services.calendar_manager import CalendarManager
 from scripts.services.text_formatter import format_linkedin_text
-from scripts.services.schedule_rotator import get_weekday_rotation
+from scripts.services.schedule_rotator import get_weekday_rotation, is_publish_day, is_blocked_topic
 
 # ── API Keys & Settings ───────────────────────────────────────────────────────
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -47,6 +47,8 @@ GEMINI_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"
 SETTINGS_PATH = os.path.join(PROJECT_ROOT, "config", "settings.json")
 SETTINGS = {
     "posts_per_day": 1,
+    "posts_per_week": 3,
+    "publish_weekdays": [0, 2, 4],
     "preferred_time": "09:00",
     "timezone": "Asia/Kolkata",
     "min_topic_score": 0.70,
@@ -160,16 +162,32 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
 
     notifier = TelegramNotifier()
     history = HistoryManager()
+    tz_name = SETTINGS.get("timezone", "Asia/Kolkata")
+    rotation = get_weekday_rotation(tz_name=tz_name)
+
+    calendar = CalendarManager()
+
+    # Weekly cadence: Mon / Wed / Fri only (manual overrides + calendar due posts still allowed)
+    if (
+        not preview
+        and not force_publish
+        and not force_topic
+        and not is_publish_day(tz_name=tz_name)
+    ):
+        print(f"[CADENCE] {rotation['day_name']} is a no-publish day (Mon/Wed/Fri only).")
+        if not calendar.get_due_post():
+            print("[CADENCE] No queued calendar post for today. Exiting cleanly.")
+            return
+        print("[CADENCE] Found a queued calendar post — continuing to publish it.")
 
     # Step 1: Idempotency Lock (bypassed if preview, manual force_publish, or manual topic override)
     if not preview and not force_publish and not force_topic:
-        if history.has_published_today(SETTINGS.get("timezone", "Asia/Kolkata")):
+        if history.has_published_today(tz_name):
             print("[IDEMPOTENCY] A post has already been published today in the current posting window.")
             print("[IDEMPOTENCY] Aborting to strictly enforce 1 post/day schedule.")
             return
 
     # Check for pre-scheduled post in Content Calendar
-    calendar = CalendarManager()
     due_post = calendar.get_due_post() if (not force_topic and not force_archetype) else None
 
     if due_post:
@@ -225,29 +243,63 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
             rss_candidates = rss_fetcher.fetch_all()
             print(f"  Fetched {len(rss_candidates)} candidate items from RSS.")
 
-            analyzer = TopicAnalyzer(min_score=SETTINGS.get("min_topic_score", 0.70))
-            candidates = analyzer.rank_candidates(rss_candidates)
-            print(f"  Scored & filtered: {len(candidates)} high-value candidates.")
+            try:
+                from scripts.services.trend_fetcher import TrendFetcher
+                trend_candidates = TrendFetcher().fetch_trending(limit=20)
+                print(f"  Fetched {len(trend_candidates)} trending Android/tech-news items.")
+            except Exception as trend_err:
+                print(f"  [WARN] Trend fetch failed: {trend_err}")
+                trend_candidates = []
 
-        # Fallback topics if RSS is empty
+            analyzer = TopicAnalyzer(min_score=SETTINGS.get("min_topic_score", 0.65))
+            merged = list(trend_candidates) + list(rss_candidates)
+            candidates = analyzer.rank_candidates(
+                merged,
+                pillar=rotation.get("pillar", "android"),
+                topic_boost=rotation.get("topic_boost") or [],
+            )
+            # Prefer at least one breaking/trending item near the top when available
+            trending = [c for c in candidates if c.get("category") == "breaking_news" or "News" in c.get("source", "")]
+            others = [c for c in candidates if c not in trending]
+            if rotation.get("pillar") == "tech_news":
+                candidates = (trending[:6] + others) if trending else others
+            else:
+                candidates = (trending[:3] + others) if trending else others
+            print(
+                f"  Scored & filtered: {len(candidates)} high-value candidates "
+                f"({len(trending)} trending/news) for pillar={rotation.get('pillar')}."
+            )
+
+        # Fallback topics if RSS is empty — pillar-aware, never UPI/fold
         if not candidates:
-            print("  [WARN] No RSS candidates met score threshold. Using curated Android topics fallback.")
-            candidates = [
-                {"title": "Understanding Process Death & State Restoration in Jetpack Compose", "summary": "How Android LMK destroys processes in the background and why rememberSaveable and DataStore are required.", "source": "curated_fallback"},
-                {"title": "Reliable BLE GATT Queueing and MTU Negotiation in Production Android", "summary": "Solving GATT status 133, connection serialization via Coroutines Channels, and MTU 517 byte negotiation.", "source": "curated_fallback"},
-                {"title": "Tuning ExoPlayer LoadControl Buffers for Low-Latency OTT Streaming", "summary": "Customizing DefaultLoadControl buffer thresholds and ABR track selection to prevent OOMs on mobile devices.", "source": "curated_fallback"},
-                {"title": "Architecting Battery-Efficient Geofencing with Android FusedLocation", "summary": "Balancing real-time proximity detection with Android 14 foreground service types and Doze mode restrictions.", "source": "curated_fallback"},
-                {"title": "Engineering an Enterprise Android Design System Published via Internal Maven", "summary": "Building unified UI component packages across multiple Android pods to reduce feature integration time.", "source": "curated_fallback"},
-                {"title": "Idempotency and Keystore Security in Mobile Banking Transactions", "summary": "Preventing double charges over flaky mobile networks with biometric prompts and client-side UUID tokens.", "source": "curated_fallback"},
-                {"title": "High-Performance JavaScript Bridge Architecture for Android WebViews", "summary": "Safely bridging web-hosted micro-frontends with native Android capabilities using native JS plugin architecture.", "source": "curated_fallback"}
-            ]
+            print("  [WARN] No RSS candidates met score threshold. Using curated pillar fallback.")
+            pillar = rotation.get("pillar", "android")
+            if pillar == "ai_android":
+                candidates = [
+                    {"title": "Gemini Nano on-device prompts still thrash AICore under memory pressure", "summary": "Android AI sessions get killed when apps ignore AICore lifecycle and keep large context warm.", "source": "curated_fallback"},
+                    {"title": "On-device LLM feature flags ship before Play Integrity checks are ready", "summary": "Teams demo Gemini Nano flows that fail on locked devices without proper model availability checks.", "source": "curated_fallback"},
+                    {"title": "ML Kit + CameraX pipelines drop frames when inference blocks the UI thread", "summary": "Vision AI features feel laggy because preprocessing and inference share the main dispatcher.", "source": "curated_fallback"},
+                ]
+            elif pillar == "tech_news":
+                candidates = [
+                    {"title": "Apple Intelligence privacy claims collide with on-device vs cloud routing", "summary": "Developers comparing Apple AI routing to Android Gemini Nano need a clear production mental model.", "source": "curated_fallback"},
+                    {"title": "Big-tech AI layoffs hide the real mobile hiring shift toward on-device skills", "summary": "Android leads still need engineers who can ship AI features under Play and device constraints.", "source": "curated_fallback"},
+                    {"title": "Pixel AI feature drops reset what users expect from every Android OEM", "summary": "Trending AI launches raise the bar for latency, offline fallbacks, and Play policy compliance.", "source": "curated_fallback"},
+                ]
+            else:
+                candidates = [
+                    {"title": "Checkout freezes when Room queries run on the main thread", "summary": "Users see a frozen pay button and ANRs; move DB work with Dispatchers.IO before shipping.", "source": "curated_fallback"},
+                    {"title": "Play Console rejects builds over the 16KB page-size deadline", "summary": "Unaligned native .so libraries crash at startup on Android 15 devices — audit before policy cutoff.", "source": "curated_fallback"},
+                    {"title": "Jetpack Compose lists jank after every StateFlow update", "summary": "Unstable parameters force full recomposition; use immutable models and derivedStateOf to keep scroll smooth.", "source": "curated_fallback"},
+                    {"title": "Battery drain from geofencing that never sleeps", "summary": "Aggressive FusedLocation updates fight Doze; tune intervals and foreground service types for Android 14+.", "source": "curated_fallback"},
+                    {"title": "Swallowing CancellationException keeps jobs alive after leave", "summary": "Blanket catch Exception in viewModelScope leaks work and crashes after navigation.", "source": "curated_fallback"},
+                ]
 
         # Step 3: Candidate Evaluation Loop
-        rotation = get_weekday_rotation()
         target_archetype = force_archetype or rotation["preferred_archetype"]
         target_theme = theme if theme != "dark" else rotation["theme"]
         print(f"\n[ Step 2 ] Finding and evaluating suitable topic...")
-        print(f"  [Weekday Matrix] {rotation['day_name']} Theme: {rotation['theme_name']}")
+        print(f"  [Weekday Matrix] {rotation['day_name']} Theme: {rotation['theme_name']} (pillar={rotation.get('pillar')})")
         print(f"  Target Archetype: {target_archetype} | Visual: {rotation['format_desc']}")
 
         writing_agent = WritingAgent(generate_text)
@@ -260,6 +312,11 @@ def run_agent(preview: bool = False, force_topic: str = None, force_publish: boo
         first_comment = None
 
         for cand in candidates:
+            if is_blocked_topic(f"{cand.get('title', '')} {cand.get('summary', '')}"):
+                print(f"  [Blocked] Skipped already-posted theme: '{cand['title']}'")
+                history.record_topic_attempt(cand["title"], cand.get("overall_score", 0.7), "rejected_blocked")
+                continue
+
             is_dup, reason = history.is_duplicate(cand["title"], cand["title"])
             if is_dup:
                 print(f"  [Duplicate] Skipped '{cand['title']}': {reason}")

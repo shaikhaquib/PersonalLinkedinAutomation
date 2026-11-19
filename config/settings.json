@@ -1,11 +1,28 @@
 {
   "posts_per_day": 1,
+  "posts_per_week": 3,
+  "publish_weekdays": [0, 2, 4],
   "preferred_time": "09:00",
   "timezone": "Asia/Kolkata",
-  "min_topic_score": 0.70,
+  "min_topic_score": 0.65,
   "daily_report": false,
   "max_review_attempts": 3,
   "target_post_length": 1300,
   "max_post_length": 3000,
-  "live_publish_enabled": false
+  "live_publish_enabled": false,
+  "blocked_topic_phrases": [
+    "upi",
+    "mdr",
+    "merchant discount",
+    "foldable",
+    "fold was already",
+    "the fold",
+    "apple fold",
+    "galaxy fold"
+  ],
+  "day_pillars": {
+    "monday": "android",
+    "wednesday": "ai_android",
+    "friday": "tech_news"
+  }
 }

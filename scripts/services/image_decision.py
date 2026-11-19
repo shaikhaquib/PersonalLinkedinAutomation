@@ -1,126 +1,115 @@
 """
-Image Decision Agent — Phase 3 compliant.
-Determines whether a post needs a visual, and if so, which of the exactly two
-permitted template types to use:
-  1. process_infographic_dark.html.j2  — Architecture Blueprint Card
-     (state flows, OS internals, pipeline diagrams, IPC/BLE/OTT mechanisms)
-  2. code_card_dark.html.j2            — Syntax-Highlighted Code Card
-     (before/after code teardowns, anti-pattern callouts, concrete Kotlin fixes)
+Image Decision Agent.
 
-No third layout is permitted per Blueprint §4.
-Text-only is used for opinion, career, and culture posts.
+Not every post needs a bitmap poster. Routes to:
+  - text-only (no card)
+  - bullet_card  (headline + 3 text bullets)
+  - code_card    (before/after Kotlin snippet)
+  - aware_graphic (clean product phone bitmap)
 """
 
+from __future__ import annotations
+
+import hashlib
 import re
-import json
 
-# Topics that benefit from the Architecture Blueprint Card (state flow / pipeline)
-ARCHITECTURE_CARD_TOPICS = {
-    "architecture", "lifecycle", "flow", "pipeline", "coroutine", "memory",
-    "binder", "ipc", "leak", "jank", "internals", "security", "keystore",
-    "ble", "bluetooth", "gatt", "exoplayer", "media3", "streaming", "hls",
-    "geofencing", "fused", "location", "lmk", "process death", "modular",
-    "windowmanager", "foldable", "multi-resume", "transaction", "idempotency",
-    "benchmark", "performance", "gradle", "startup", "baseline"
-}
-
-# Topics that benefit from the Code Card (before/after Kotlin teardown)
-CODE_CARD_TOPICS = {
-    "recomposition", "composable", "compose", "lambda", "state hoist",
-    "viewmodel", "usecase", "clean architecture", "mvvm", "mvi", "repository",
-    "dependency injection", "hilt", "dagger", "singleton", "sealed",
-    "extension", "operator", "coroutine scope", "channel", "mutex",
-    "savedstatehandle", "remember", "derivedstateof", "stableclass",
-    "unstable", "anti-pattern", "teardown", "code review", "pattern"
-}
-
-# Topics that are always text-only
 TEXT_ONLY_TOPICS = {
     "opinion", "career", "interview", "mindset", "culture", "hiring",
-    "announcement", "soft skills", "leadership", "job search", "burnout"
+    "announcement", "soft skills", "leadership", "job search", "burnout",
+    "mentorship", "imposter",
 }
 
-_TEMPLATE_ARCH_DARK  = "process_infographic_dark.html.j2"
-_TEMPLATE_CODE_DARK  = "code_card_dark.html.j2"
-_TEMPLATE_ARCH_LIGHT = "process_infographic_light.html.j2"
-_TEMPLATE_CODE_LIGHT = "code_card_light.html.j2"
-_TEMPLATE_CAROUSEL   = "carousel_card.html.j2"
+TECH_TOPICS = {
+    "android", "kotlin", "compose", "jetpack", "anr", "crash", "play",
+    "payment", "gemini", "architecture", "gradle", "biometric", "security",
+    "aicore", "room", "hilt", "coroutine",
+}
 
-# Backward-compatible defaults
-_TEMPLATE_ARCH = _TEMPLATE_ARCH_DARK
-_TEMPLATE_CODE = _TEMPLATE_CODE_DARK
+CODE_SIGNALS = {
+    "fun ", "@composable", "viewmodelscope", "stateflow", "launch {",
+    "before/after", "antipattern", "code autopsy", "snippet",
+    "cancellationexception", "Dispatchers.IO", "remember(",
+}
+
+PRODUCT_VISUAL_SIGNALS = {
+    "biometric", "fingerprint", "face unlock", "phone", "anr", "freeze",
+    "crash", "play console", "16kb", "gemini nano", "aicore", "on-device",
+    "compose list", "lazycolumn", "payment successful", "notification",
+}
+
+BULLET_SIGNALS = {
+    "rule", "checklist", "3 things", "three things", "takeaway",
+    "what to audit", "stop doing", "instead of", "• ", "1️⃣",
+}
+
+_TEMPLATE_AWARE = "aware_graphic_dark.html.j2"
+_TEMPLATE_CODE = "code_card_dark.html.j2"
+_TEMPLATE_BULLET = "bullet_card_dark.html.j2"
 
 
 class ImageDecisionAgent:
     def __init__(self, llm_generate_fn=None):
         self.generate_fn = llm_generate_fn
 
-    def decide(self, topic: str, post_text: str, archetype_id: str = "", theme: str = "dark") -> tuple[bool, str, str]:
-        """
-        Decides image type based on topic, archetype, length, and requested theme.
-        Returns (should_generate: bool, reason: str, template_name: str).
-        template_name is one of the permitted templates or "" (text-only).
-        """
-        arch_template = _TEMPLATE_ARCH_LIGHT if theme == "light" else _TEMPLATE_ARCH_DARK
-        code_template = _TEMPLATE_CODE_LIGHT if theme == "light" else _TEMPLATE_CODE_DARK
-
+    def decide(
+        self,
+        topic: str,
+        post_text: str,
+        archetype_id: str = "",
+        theme: str = "dark",
+    ) -> tuple[bool, str, str]:
         combined = f"{topic} {post_text} {archetype_id}".lower()
+        arch = (archetype_id or "").upper()
 
-        # 1. Check if text-only
-        if any(t in combined for t in TEXT_ONLY_TOPICS) and not any(
-            t in combined for t in ARCHITECTURE_CARD_TOPICS | CODE_CARD_TOPICS
-        ):
-            return False, "Opinion/culture/career post — text-only performs better.", ""
+        # Pure opinion / career → text-only
+        if any(t in combined for t in TEXT_ONLY_TOPICS) and not any(t in combined for t in TECH_TOPICS):
+            return False, "Opinion/culture/career post — text-only.", ""
 
-        # 3. Code Card — Code Autopsy or Contrarian anti-pattern archetype
-        if archetype_id in ("CODE_AUTOPSY_TEARDOWN", "CONTRARIAN_ARCHITECTURE_CALLOUT"):
-            return True, f"Code teardown/anti-pattern archetype — Syntax-Highlighted Code Card ({theme}) selected.", code_template
+        # Explicit code autopsy / Kotlin teardown → code card
+        if arch == "CODE_AUTOPSY_TEARDOWN" or self._looks_like_code_post(combined):
+            tpl = _TEMPLATE_CODE if theme != "light" else "code_card_light.html.j2"
+            return True, "Before/after Kotlin code card.", tpl
 
-        # 3. Code Card — topic signals code comparison
-        code_score = sum(1 for t in CODE_CARD_TOPICS if t in combined)
-        arch_score = sum(1 for t in ARCHITECTURE_CARD_TOPICS if t in combined)
+        # Strong product/device visual → clean phone bitmap poster
+        if self._looks_like_product_visual(combined):
+            return True, "Clean product phone bitmap card.", _TEMPLATE_AWARE
 
-        if code_score > arch_score and code_score >= 2:
-            return True, f"Code pattern comparison topic — Syntax-Highlighted Code Card ({theme}) selected.", code_template
+        # Rules / checklist / contrarian callouts → text bullet card
+        if arch == "CONTRARIAN_ARCHITECTURE_CALLOUT" or self._looks_like_bullet_post(combined):
+            return True, "Text bullet card (no bitmap).", _TEMPLATE_BULLET
 
-        # 4. Architecture Blueprint Card — technical mechanism/pipeline/OS internals
-        if arch_score >= 1 or any(t in combined for t in ARCHITECTURE_CARD_TOPICS):
-            return True, f"Technical architecture/OS internals topic — Architecture Blueprint Card ({theme}) selected.", arch_template
-
-        # 5. LLM fallback with template routing
-        if self.generate_fn:
-            prompt = f"""Post Topic: {topic}
-Archetype: {archetype_id}
-Post Excerpt: {post_text[:400]}
-
-Decide: Which visual template best fits this LinkedIn post by a Senior Android Developer?
-Options:
-- "architecture_card": State flows, OS internals, BLE/OTT/IPC pipeline diagrams, process death, foldables.
-- "code_card": Before/after Kotlin code comparison, anti-pattern teardown, composable hoisting, API misuse.
-- "text_only": Opinion, career, culture, leadership lesson.
-
-Return ONLY valid JSON:
-{{"template": "architecture_card", "reason": "brief reason"}}"""
-            try:
-                raw = self.generate_fn(prompt, "You are a technical visual content strategist for Android engineering posts.")
-                match = re.search(r"\{.*\}", raw, re.DOTALL)
-                if match:
-                    res = json.loads(match.group(0))
-                    tpl = res.get("template", "architecture_card")
-                    reason = res.get("reason", "LLM decision")
-                    if tpl == "text_only":
-                        return False, reason, ""
-                    elif tpl == "code_card":
-                        return True, reason, code_template
-                    else:
-                        return True, reason, arch_template
-            except Exception:
-                pass
-
-        # Default: Architecture Blueprint Card for any technical topic
-        return True, f"Default — Architecture Blueprint Card ({theme}) for technical topic.", arch_template
+        # Variety fallback so we don't always ship the same poster style
+        bucket = self._variety_bucket(topic)
+        if bucket == 0:
+            return False, "Variety slot — text-only (no card).", ""
+        if bucket == 1:
+            return True, "Variety slot — text bullet card.", _TEMPLATE_BULLET
+        if bucket == 2:
+            tpl = _TEMPLATE_CODE if theme != "light" else "code_card_light.html.j2"
+            return True, "Variety slot — Kotlin code card.", tpl
+        return True, "Variety slot — clean product bitmap card.", _TEMPLATE_AWARE
 
     def should_generate_image(self, topic: str, post_text: str) -> tuple[bool, str]:
-        """Legacy compatibility shim — returns (needs_image, reason)."""
         needs, reason, _ = self.decide(topic, post_text)
         return needs, reason
+
+    @staticmethod
+    def _looks_like_code_post(text: str) -> bool:
+        if sum(1 for s in CODE_SIGNALS if s.lower() in text) >= 2:
+            return True
+        if re.search(r"```|fun\s+\w+\(|@Composable", text):
+            return True
+        return False
+
+    @staticmethod
+    def _looks_like_product_visual(text: str) -> bool:
+        return any(s in text for s in PRODUCT_VISUAL_SIGNALS)
+
+    @staticmethod
+    def _looks_like_bullet_post(text: str) -> bool:
+        return any(s in text for s in BULLET_SIGNALS)
+
+    @staticmethod
+    def _variety_bucket(topic: str) -> int:
+        digest = hashlib.md5((topic or "x").encode("utf-8")).hexdigest()
+        return int(digest[:8], 16) % 4

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; overflow: hidden; }
+  :root {
+    --paper: #0b0f14;
+    --ink: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --warn: #fb923c;
+    --bad: #f87171;
+    --good: #34d399;
+    --panel: #141a22;
+    --line: rgba(255,255,255,0.10);
+  }
+  .page {
+    width: 1080px; background: var(--paper);
+    position: relative; overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .page::before {
+    content:''; position:absolute; inset:0;
+    background:
+      radial-gradient(ellipse 60% 45% at 85% 15%, rgba(56,189,248,0.18), transparent 55%),
+      radial-gradient(ellipse 50% 40% at 10% 90%, rgba(251,146,60,0.12), transparent 50%);
+  }
+  .content { position: relative; z-index: 1; padding: 48px 52px 44px; }
+
+  .top-row { display:flex; justify-content:space-between; align-items:center; margin-bottom: 28px; }
+  .left-chips { display:flex; gap:10px; align-items:center; }
+  .chip {
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700;
+    letter-spacing:1.4px; text-transform:uppercase; border-radius:999px; padding:7px 12px;
+  }
+  .chip.live { color:#0b0f14; background: var(--warn); }
+  .chip.cat { color: var(--accent); border:1px solid rgba(56,189,248,0.35); background: rgba(56,189,248,0.08); }
+  .lang-pill {
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700;
+    color: var(--muted); border:1px solid var(--line); border-radius:999px; padding:6px 12px;
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 28px;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+
+  .eyebrow {
+    font-family:'JetBrains Mono', monospace; font-size:14px; font-weight:700;
+    letter-spacing:1.6px; color: var(--warn); text-transform:uppercase; margin-bottom: 14px;
+  }
+  .headline {
+    font-size: 48px; font-weight: 800; line-height: 1.08;
+    letter-spacing: -1.2px; color: var(--ink); margin-bottom: 14px;
+  }
+  .subhead {
+    font-size: 22px; font-weight: 500; line-height: 1.4; color: var(--muted); max-width: 520px;
+  }
+
+  .art {
+    position: relative;
+    background: linear-gradient(160deg, #17202b, #0f141c 70%);
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    min-height: 360px;
+    display:flex; align-items:center; justify-content:center;
+    overflow: hidden;
+  }
+  .art::after {
+    content:''; position:absolute; inset:0;
+    background: radial-gradient(circle at 70% 30%, rgba(56,189,248,0.15), transparent 45%);
+  }
+  .art svg { position: relative; z-index: 1; }
+
+  .pulse {
+    position:absolute; width:180px; height:180px; border-radius:50%;
+    border: 2px solid rgba(248,113,113,0.35);
+    animation: none;
+  }
+
+  .stat-row {
+    display:grid; grid-template-columns: 1fr 1.4fr; gap: 16px; margin-bottom: 28px;
+  }
+  .stat, .take {
+    background: var(--panel); border:1px solid var(--line); border-radius: 18px; padding: 22px 24px;
+  }
+  .stat-label, .take-label {
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700;
+    letter-spacing:1.3px; color: var(--muted); margin-bottom: 8px; text-transform:uppercase;
+  }
+  .stat-value { font-size: 28px; font-weight: 800; color: var(--ink); letter-spacing: -0.4px; }
+  .take-value { font-size: 22px; font-weight: 700; color: var(--ink); line-height: 1.35; }
+
+  .spark {
+    display:flex; align-items:flex-end; gap:6px; height: 42px; margin-top: 12px;
+  }
+  .spark span {
+    width: 10px; border-radius: 4px 4px 0 0;
+    background: linear-gradient(180deg, var(--accent), rgba(56,189,248,0.2));
+  }
+
+  .footer {
+    display:flex; justify-content:space-between; align-items:flex-end;
+    border-top:1px solid var(--line); padding-top: 20px;
+  }
+  .author-name { font-size:18px; font-weight:700; color: var(--ink); }
+  .author-title { font-size:14px; color: var(--muted); margin-top:4px; }
+  .footer-right {
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700;
+    letter-spacing:1.2px; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="content">
+    <div class="top-row">
+      <div class="left-chips">
+        <div class="chip live">{{ chip | default('TRENDING') }}</div>
+        <div class="chip cat">{{ category }}</div>
+      </div>
+      <div class="lang-pill">Android News</div>
+    </div>
+
+    <div class="hero">
+      <div>
+        <div class="eyebrow">{{ eyebrow }}</div>
+        <div class="headline">{{ headline }}</div>
+        <div class="subhead">{{ subhead }}</div>
+      </div>
+
+      <div class="art">
+        {% if visual == 'play_policy' %}
+        <svg width="260" height="280" viewBox="0 0 260 280" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="70" y="20" width="120" height="220" rx="22" stroke="#38bdf8" stroke-width="4" fill="#0f172a"/>
+          <rect x="88" y="48" width="84" height="140" rx="8" fill="#1e293b"/>
+          <circle cx="130" cy="210" r="10" stroke="#94a3b8" stroke-width="3"/>
+          <path d="M40 70 L55 95 L25 95 Z" fill="#fb923c"/>
+          <rect x="175" y="78" width="58" height="58" rx="14" fill="#f87171"/>
+          <path d="M193 97 L215 119 M215 97 L193 119" stroke="#0b0f14" stroke-width="6" stroke-linecap="round"/>
+          <text x="20" y="260" fill="#94a3b8" font-family="JetBrains Mono, monospace" font-size="14">PLAY REJECT</text>
+        </svg>
+        {% elif visual == 'security' %}
+        <svg width="260" height="280" viewBox="0 0 260 280" fill="none">
+          <path d="M130 30 L210 70 V130 C210 185 170 230 130 250 C90 230 50 185 50 130 V70 Z" stroke="#34d399" stroke-width="5" fill="rgba(52,211,153,0.08)"/>
+          <circle cx="130" cy="125" r="28" stroke="#f8fafc" stroke-width="4"/>
+          <rect x="118" y="125" width="24" height="36" rx="6" fill="#f8fafc"/>
+          <text x="55" y="270" fill="#94a3b8" font-family="JetBrains Mono, monospace" font-size="14">KEYSTORE / BIOMETRIC</text>
+        </svg>
+        {% elif visual == 'ai' %}
+        <svg width="280" height="280" viewBox="0 0 280 280" fill="none">
+          <circle cx="140" cy="130" r="54" stroke="#38bdf8" stroke-width="4" fill="rgba(56,189,248,0.08)"/>
+          <circle cx="140" cy="130" r="18" fill="#38bdf8"/>
+          <path d="M140 40 V70 M140 190 V220 M40 130 H70 M210 130 H240 M70 70 L92 92 M188 168 L210 190 M210 70 L188 92 M70 190 L92 168" stroke="#fb923c" stroke-width="4" stroke-linecap="round"/>
+          <rect x="88" y="236" width="104" height="28" rx="14" fill="#1e293b" stroke="#38bdf8"/>
+          <text x="108" y="255" fill="#e2e8f0" font-family="JetBrains Mono, monospace" font-size="12">ON-DEVICE AI</text>
+        </svg>
+        {% elif visual == 'compose' %}
+        <svg width="280" height="280" viewBox="0 0 280 280" fill="none">
+          <rect x="48" y="40" width="184" height="200" rx="18" stroke="#38bdf8" stroke-width="4" fill="#111827"/>
+          <rect x="68" y="68" width="144" height="28" rx="8" fill="#334155"/>
+          <rect x="68" y="110" width="144" height="18" rx="6" fill="#1e293b"/>
+          <rect x="68" y="140" width="144" height="18" rx="6" fill="#1e293b"/>
+          <rect x="68" y="170" width="100" height="18" rx="6" fill="#1e293b"/>
+          <path d="M210 90 C230 110, 230 150, 200 175" stroke="#fb923c" stroke-width="5" fill="none"/>
+          <path d="M188 168 L200 176 L212 160" stroke="#fb923c" stroke-width="5" fill="none"/>
+          <text x="70" y="260" fill="#94a3b8" font-family="JetBrains Mono, monospace" font-size="14">COMPOSE UI FLOW</text>
+        </svg>
+        {% elif visual == 'release' %}
+        <svg width="280" height="280" viewBox="0 0 280 280" fill="none">
+          <rect x="60" y="50" width="160" height="160" rx="28" fill="rgba(56,189,248,0.12)" stroke="#38bdf8" stroke-width="4"/>
+          <path d="M110 130 L130 150 L175 95" stroke="#34d399" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="220" cy="70" r="28" fill="#fb923c"/>
+          <text x="208" y="76" fill="#0b0f14" font-family="DM Sans, sans-serif" font-size="18" font-weight="700">v+</text>
+          <text x="78" y="250" fill="#94a3b8" font-family="JetBrains Mono, monospace" font-size="14">NEW PLATFORM DROP</text>
+        </svg>
+        {% else %}
+        {# default: crash / alert graphic #}
+        <svg width="280" height="280" viewBox="0 0 280 280" fill="none">
+          <circle cx="140" cy="120" r="78" fill="rgba(248,113,113,0.10)" stroke="#f87171" stroke-width="4"/>
+          <path d="M140 70 L175 145 H105 Z" fill="#fb923c"/>
+          <rect x="132" y="100" width="16" height="28" rx="4" fill="#0b0f14"/>
+          <circle cx="140" cy="142" r="6" fill="#0b0f14"/>
+          <path d="M60 210 H220" stroke="#334155" stroke-width="6" stroke-linecap="round"/>
+          <path d="M80 210 L95 190 M110 210 L128 175 M150 210 L165 185 M190 210 L205 195" stroke="#38bdf8" stroke-width="5" stroke-linecap="round"/>
+          <text x="78" y="250" fill="#94a3b8" font-family="JetBrains Mono, monospace" font-size="14">CRASH / STABILITY</text>
+        </svg>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-label">{{ stat_label | default('WHY IT MATTERS') }}</div>
+        <div class="stat-value">{{ stat_value }}</div>
+        <div class="spark" aria-hidden="true">
+          <span style="height:14px"></span><span style="height:22px"></span><span style="height:18px"></span>
+          <span style="height:30px"></span><span style="height:26px"></span><span style="height:38px"></span>
+          <span style="height:34px"></span><span style="height:42px"></span>
+        </div>
+      </div>
+      <div class="take">
+        <div class="take-label">ENGINEER TAKEAWAY</div>
+        <div class="take-value">{{ takeaway }}</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <div class="author-name">Aquib Rashid Shaikh</div>
+        <div class="author-title">Senior Android Developer &amp; Mobile Tech Lead</div>
+      </div>
+      <div class="footer-right">ANDROID / TRENDING</div>
+    </div>
+  </div>
+</div>
+<script>
+function drawInfographic() {
+  const page = document.querySelector('.page');
+  const content = document.querySelector('.content');
+  const h = Math.min(1500, Math.max(650, content.scrollHeight + 8));
+  page.style.height = h + 'px';
+  document.body.style.height = h + 'px';
+}
+drawInfographic();
+</script>
+</body>
+</html>

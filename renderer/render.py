@@ -25,6 +25,12 @@ _CANVAS_SIZES = {
     "code_card_dark.html.j2":           (1080, 900),
     "process_infographic_light.html.j2":(1080, 900),
     "code_card_light.html.j2":          (1080, 900),
+    "hook_poster_dark.html.j2":         (1080, 900),
+    "hook_poster_light.html.j2":        (1080, 900),
+    "hook_poster_quote_dark.html.j2":   (1080, 900),
+    "news_graphic_dark.html.j2":        (1080, 1000),
+    "aware_graphic_dark.html.j2":       (1080, 820),
+    "bullet_card_dark.html.j2":         (1080, 780),
 }
 
 

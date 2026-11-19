@@ -153,7 +153,7 @@ class CalendarManager:
             "## How Scheduling Works",
             "",
             "1. **Pre-generation & Quality Gate**: Posts in this calendar have passed all 6 Quality Review metrics and had their visual cards pre-rendered.",
-            "2. **Daily Execution Trigger**: GitHub Actions runs daily at `09:00 AM IST` (`cron: '30 3 * * *'`). When the scheduled time arrives, `scripts/main.py` checks this calendar, picks the queued post, publishes it via OAuth, drops the author first comment, and marks the status as Published.",
+            "2. **Mon/Wed/Fri Execution Trigger**: GitHub Actions runs 3×/week at ~`09:00 AM IST` (`cron: '25 3 * * 1,3,5'`). When the scheduled time arrives, `scripts/main.py` checks this calendar, picks the queued post, publishes it via OAuth, drops the author first comment, and marks the status as Published.",
             "3. **LinkedIn Native UI Alternate**: If you prefer posting via LinkedIn's desktop web scheduler (clock icon), copy the post text, first comment, and pre-rendered image asset directly from the calendar entry.",
             ""
         ])

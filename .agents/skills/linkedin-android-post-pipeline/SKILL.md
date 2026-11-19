@@ -107,12 +107,13 @@ Follow this exact order when scheduling a post:
 - Proceed with best candidate if borderline
 
 ### Step 3 — Image decision (`ImageDecisionAgent`)
-Only **two** visual templates allowed:
+**Default visual is Hook Poster** (scroll-stopping pain contrast). Deep cards only when teardown is explicit:
 
 | Template | File | Use for |
 |----------|------|---------|
-| Architecture Blueprint | `process_infographic_{dark,light}.html.j2` | OS internals, BLE/IPC flows, pipelines, scale incidents |
-| Code Autopsy | `code_card_{dark,light}.html.j2` | Before/after Kotlin teardowns, anti-patterns |
+| Hook Poster (default) | `hook_poster_{dark,light}.html.j2` | Felt production pain, debates, trends |
+| Architecture Blueprint | `process_infographic_{dark,light}.html.j2` | Dense OS/hardware mechanism only |
+| Code Autopsy | `code_card_{dark,light}.html.j2` | Explicit before/after Kotlin teardowns |
 
 Text-only for pure opinion/career posts.
 

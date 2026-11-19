@@ -6,9 +6,10 @@ Pipeline:
   render_infographic()        → Playwright → PNG
   upload_to_linkedin()        → LinkedIn media API → asset URN
 
-Two templates are supported:
-  process_infographic_dark.html.j2  — Architecture Blueprint Card
-  code_card_dark.html.j2            — Syntax-Highlighted Code Card (before/after)
+Templates:
+  hook_poster_{dark,light}.html.j2      — Scroll-stopping pain poster (default)
+  process_infographic_{dark,light}.html.j2 — Architecture Blueprint Card
+  code_card_{dark,light}.html.j2           — Before/after Code Card
 """
 
 import os
@@ -120,6 +121,132 @@ _KOTLIN_KEYWORDS = {
     "abstract", "sealed", "data", "enum", "import", "package", "true", "false",
     "null", "this", "super", "lazy", "init", "companion", "get", "set",
 }
+
+_HOOK_POSTER_CONTENT_PROMPT = """
+Generate content for a SCROLL-STOPPING LinkedIn Hook Poster for a Senior Android Developer.
+NO code blocks. NO dense API diagrams. Big human pain + sharp contrast.
+
+Topic: {topic}
+
+Post this card accompanies:
+{post_text}
+
+STRICT REQUIREMENTS:
+- "category": 2-4 words ALL CAPS (e.g. "PRODUCTION PAIN", "PLAY CONSOLE", "COMPOSE JANK")
+- "hook_line": 4-9 words — the felt problem users/devs notice (no stacked jargon)
+- "punch_line": 4-10 words — the twist or consequence (conversational)
+- "stakes": one sentence under 18 words explaining why it matters in production
+- "contrast_left": object {{"label": "WHAT USERS FEEL" or similar, "text": short pain phrase under 12 words}}
+- "contrast_right": object {{"label": "WHAT TO FIX" or similar, "text": short fix under 14 words; may name ONE real API}}
+- "bullets": exactly 3 short imperative lines, 6-12 words each, practical (not lecture)
+
+BANNED: code fences, markdown, emoji, generic hype (seamless, robust, game changer),
+kernel-paper openers, multi-line code.
+
+Return ONLY valid JSON:
+{{
+  "category": "PRODUCTION PAIN",
+  "hook_line": "Checkout freezes for three seconds",
+  "punch_line": "then users blame your network",
+  "stakes": "Main-thread Room reads stall frames before any spinner appears",
+  "contrast_left": {{"label": "WHAT USERS FEEL", "text": "Frozen pay button. Angry 1-star reviews."}},
+  "contrast_right": {{"label": "WHAT TO FIX", "text": "Move DB work with withContext(Dispatchers.IO)"}},
+  "bullets": [
+    "Catch jank with FrameMetrics before you ship",
+    "Keep ViewModels thin and push IO to repositories",
+    "Fail QA builds when frames miss the 16ms budget"
+  ]
+}}
+""".strip()
+
+_HOOK_QUOTE_CONTENT_PROMPT = """
+Generate content for a QUOTE-STYLE LinkedIn poster (big claim, almost no UI chrome).
+No contrast boxes. No bullet lists. No code.
+
+Topic: {topic}
+Post:
+{post_text}
+
+Return ONLY JSON:
+{{
+  "category": "HOT TAKE",
+  "hook_line": "Clean Architecture is slowing your Android team down",
+  "punch_line": "when every CRUD call gets its own UseCase class",
+  "stakes": "Ship speed dies under ceremony while bugs still ship"
+}}
+""".strip()
+
+_NEWS_GRAPHIC_CONTENT_PROMPT = """
+Generate content for a GRAPHIC Android tech-news LinkedIn poster.
+This card has a real illustration panel (phone / shield / AI / compose / release / crash).
+Keep copy short — the graphic does the heavy lifting.
+
+Topic: {topic}
+Post:
+{post_text}
+
+STRICT:
+- "category": 2-3 words ALL CAPS news lane (BREAKING, PLAY POLICY, ANDROID 16, ON-DEVICE AI)
+- "chip": short badge like "TRENDING" or "THIS WEEK"
+- "eyebrow": short news kicker (e.g. ANDROID 15, PLAY CONSOLE, COMPOSE)
+- "headline": 5-10 words, newsy, human
+- "subhead": one line under 16 words
+- "visual": exactly one of: crash | play_policy | security | ai | compose | release
+- "stat_label": short label
+- "stat_value": 2-5 word impact phrase
+- "takeaway": one practical engineer line under 16 words
+
+Return ONLY JSON:
+{{
+  "category": "PLAY POLICY",
+  "chip": "TRENDING",
+  "eyebrow": "ANDROID 15",
+  "headline": "Play starts killing misaligned native apps",
+  "subhead": "16KB page-size misses now show up as silent startup deaths",
+  "visual": "play_policy",
+  "stat_label": "WHY IT MATTERS",
+  "stat_value": "Crash-free metrics lie",
+  "takeaway": "Audit third-party .so files before your next Play upload"
+}}
+""".strip()
+
+_AWARE_GRAPHIC_CONTENT_PROMPT = """
+Generate content for a CONTENT-AWARE Android LinkedIn graphic.
+The image is mostly ILLUSTRATION (phone, foldable, UPI payment, Compose code phone) — NOT a checklist and NOT a giant tick/check icon.
+Keep text minimal. No bullet lists. No timelines. No MDR tables.
+
+Topic: {topic}
+Post:
+{post_text}
+
+STRICT JSON fields:
+- "chip": short badge (TRENDING / FINTECH / FOLDABLES / COMPOSE)
+- "eyebrow": short kicker shown top-right
+- "category": short lane label above headline
+- "headline": 5-12 words. You MAY wrap ONE key word in <em>word</em> for gradient emphasis.
+- "subhead": one sentence, max 18 words
+- "visual": exactly one of: foldable | payment | compose | play_policy | ai | crash
+- "tags": 2-4 short tech tags (Kotlin, Compose, UPI, etc.)
+
+Pick visual that MATCHES the topic (clean phone-only bitmap, no busy background props):
+- biometric / Keystore / auth bypass → security
+- Compose / recomposition / UI → compose
+- Play Console / 16KB / reject → play_policy
+- Gemini / on-device AI → ai
+- ANR / freeze / crash → crash
+Avoid foldable/payment visuals (already posted).
+
+Return ONLY JSON:
+{{
+  "chip": "SECURITY",
+  "eyebrow": "LOCAL AUTH",
+  "category": "BIOMETRIC BYPASS",
+  "headline": "Biometrics are just a fancy <em>button</em>.",
+  "subhead": "The vulnerability lives in weak local auth state checks.",
+  "visual": "security",
+  "tags": ["BiometricPrompt", "Keystore", "Kotlin"]
+}}
+""".strip()
 
 _SYSTEM = "You generate structured JSON content for technical Android developer infographics. Return only valid JSON, no extra text, no markdown code fences."
 
@@ -520,6 +647,293 @@ def _lint_architecture_content(data: dict) -> list[str]:
     return violations
 
 
+def _clean_hook_poster_content(data: dict) -> dict:
+    data["category"] = _clean_text(data.get("category", "")).upper() or "PRODUCTION PAIN"
+    data["hook_line"] = _clean_text(data.get("hook_line", ""))
+    data["punch_line"] = _clean_text(data.get("punch_line", ""))
+    data["stakes"] = _clean_text(data.get("stakes", ""))
+
+    left = data.get("contrast_left") or {}
+    right = data.get("contrast_right") or {}
+    if not isinstance(left, dict):
+        left = {"label": "WHAT USERS FEEL", "text": str(left)}
+    if not isinstance(right, dict):
+        right = {"label": "WHAT TO FIX", "text": str(right)}
+    data["contrast_left"] = {
+        "label": _clean_text(left.get("label", "")).upper() or "WHAT USERS FEEL",
+        "text": _clean_text(left.get("text", "")),
+    }
+    data["contrast_right"] = {
+        "label": _clean_text(right.get("label", "")).upper() or "WHAT TO FIX",
+        "text": _clean_text(right.get("text", "")),
+    }
+
+    bullets = [_clean_text(b) for b in data.get("bullets", []) if _clean_text(b)]
+    if len(bullets) < 3:
+        bullets.extend([
+            "Profile the freeze before blaming the network layer",
+            "Move blocking work off the main thread immediately",
+            "Add a regression check so this pain never ships again",
+        ])
+    data["bullets"] = bullets[:3]
+    return data
+
+
+def _clean_hook_quote_content(data: dict) -> dict:
+    data["category"] = _clean_text(data.get("category", "")).upper() or "HOT TAKE"
+    data["hook_line"] = _clean_text(data.get("hook_line", ""))
+    data["punch_line"] = _clean_text(data.get("punch_line", ""))
+    data["stakes"] = _clean_text(data.get("stakes", ""))
+    return data
+
+
+def _lint_hook_quote_content(data: dict) -> list[str]:
+    violations = []
+    for key in ("category", "hook_line", "punch_line", "stakes"):
+        if not data.get(key):
+            violations.append(f"MISSING_FIELD: '{key}' is required for quote posters")
+    hook = data.get("hook_line", "")
+    if len(hook.split()) < 4:
+        violations.append("SHORT_HOOK: quote hook_line needs 4+ words")
+    if len(hook.split()) > 14:
+        violations.append("LONG_HOOK: quote hook_line must stay under 14 words")
+    joined = " ".join([hook, data.get("punch_line", ""), data.get("stakes", "")])
+    banned_match = _BANNED_ABSTRACT.search(joined)
+    if banned_match:
+        violations.append(f"BANNED_PHRASE: '{banned_match.group(0)}' found in content")
+    return violations
+
+
+_ALLOWED_NEWS_VISUALS = {"crash", "play_policy", "security", "ai", "compose", "release"}
+# foldable/payment kept for asset compatibility but preferred mapping avoids already-posted themes
+_ALLOWED_AWARE_VISUALS = {"foldable", "payment", "compose", "play_policy", "ai", "crash", "security"}
+_PREFERRED_AWARE_VISUALS = {"compose", "play_policy", "ai", "crash", "security"}
+
+_BULLET_CARD_CONTENT_PROMPT = """
+Generate content for a CLEAN TEXT BULLET LinkedIn card (no phone bitmap, no code panels).
+Topic: {topic}
+Post:
+{post_text}
+
+STRICT JSON:
+- "chip": short badge
+- "eyebrow": short top-right kicker
+- "category": short lane label
+- "headline": 5-12 words; optional one <em>word</em>
+- "subhead": one sentence, max 18 words
+- "bullets": exactly 3 practical lines, 6-14 words each, real Android/Kotlin terms
+
+Return ONLY JSON:
+{{
+  "chip": "ANDROID",
+  "eyebrow": "ENGINEERING NOTES",
+  "category": "PRODUCTION RULE",
+  "headline": "Stop trusting the <em>client</em> flag.",
+  "subhead": "Local auth checks are not a security boundary.",
+  "bullets": [
+    "Keep session proof in Keystore-backed storage, not SharedPreferences",
+    "Re-validate server-side after every BiometricPrompt success callback",
+    "Treat exported activities as untrusted entry points in release builds"
+  ]
+}}
+""".strip()
+
+
+def _clean_news_graphic_content(data: dict) -> dict:
+    data["category"] = _clean_text(data.get("category", "")).upper() or "BREAKING"
+    data["chip"] = _clean_text(data.get("chip", "")).upper() or "TRENDING"
+    data["eyebrow"] = _clean_text(data.get("eyebrow", "")).upper() or "ANDROID"
+    data["headline"] = _clean_text(data.get("headline", ""))
+    data["subhead"] = _clean_text(data.get("subhead", ""))
+    visual = _clean_text(data.get("visual", "")).lower().replace(" ", "_")
+    if visual not in _ALLOWED_NEWS_VISUALS:
+        # Heuristic fallback from copy
+        blob = f"{data['headline']} {data['subhead']}".lower()
+        if "play" in blob or "16kb" in blob or "policy" in blob:
+            visual = "play_policy"
+        elif "secure" in blob or "biometric" in blob or "keystore" in blob:
+            visual = "security"
+        elif "gemini" in blob or "ai" in blob or "nano" in blob:
+            visual = "ai"
+        elif "compose" in blob:
+            visual = "compose"
+        elif "release" in blob or "android 1" in blob:
+            visual = "release"
+        else:
+            visual = "crash"
+    data["visual"] = visual
+    data["stat_label"] = _clean_text(data.get("stat_label", "")).upper() or "WHY IT MATTERS"
+    data["stat_value"] = _clean_text(data.get("stat_value", "")) or "Production impact"
+    data["takeaway"] = _clean_text(data.get("takeaway", "")) or "Verify this against your current release train"
+    return data
+
+
+def _lint_news_graphic_content(data: dict) -> list[str]:
+    violations = []
+    required = [
+        "category", "chip", "eyebrow", "headline", "subhead",
+        "visual", "stat_label", "stat_value", "takeaway",
+    ]
+    for key in required:
+        if not data.get(key):
+            violations.append(f"MISSING_FIELD: '{key}' is required for news graphics")
+    if data.get("visual") not in _ALLOWED_NEWS_VISUALS:
+        violations.append(
+            f"INVALID_VISUAL: '{data.get('visual')}' must be one of {sorted(_ALLOWED_NEWS_VISUALS)}"
+        )
+    if len(data.get("headline", "").split()) < 4:
+        violations.append("SHORT_HEADLINE: headline needs 4+ words")
+    if len(data.get("takeaway", "").split()) < 5:
+        violations.append("SHORT_TAKEAWAY: takeaway needs 5+ words")
+    joined = " ".join([
+        data.get("headline", ""), data.get("subhead", ""),
+        data.get("stat_value", ""), data.get("takeaway", ""),
+    ])
+    banned_match = _BANNED_ABSTRACT.search(joined)
+    if banned_match:
+        violations.append(f"BANNED_PHRASE: '{banned_match.group(0)}' found in content")
+    return violations
+
+
+def _clean_aware_graphic_content(data: dict) -> dict:
+    data["chip"] = _clean_text(data.get("chip", "")).upper() or "ANDROID"
+    data["eyebrow"] = _clean_text(data.get("eyebrow", "")).upper() or "MOBILE ENGINEERING"
+    data["category"] = _clean_text(data.get("category", "")).upper() or "ANDROID"
+    # Keep optional <em> emphasis in headline
+    headline = str(data.get("headline", "")).strip()
+    headline = re.sub(r"\*{1,3}", "", headline)
+    data["headline"] = headline
+    data["subhead"] = _clean_text(data.get("subhead", ""))
+    visual = _clean_text(data.get("visual", "")).lower().replace(" ", "_")
+    blob = f"{headline} {data['subhead']} {data['category']} {data.get('chip','')}".lower()
+    # Never reuse already-posted UPI / fold visual themes
+    if visual in ("foldable", "payment") or any(
+        k in blob for k in ("fold", "upi", "mdr", "qr stand", "hinge", "windowsize")
+    ):
+        visual = ""
+    # Keyword overrides beat a bad LLM visual pick (e.g. biometric → crash)
+    if any(k in blob for k in ("biometric", "keystore", "secure", "auth bypass", "fingerprint", "frida")):
+        visual = "security"
+    elif any(k in blob for k in ("gemini", "on-device", "nano", "aicore", "llm")):
+        visual = "ai"
+    elif any(k in blob for k in ("play console", "16kb", "policy", "reject", "permission")):
+        visual = "play_policy"
+    elif any(k in blob for k in ("compose", "recomposition", "lazycolumn", "baseline profile")):
+        visual = "compose"
+    elif any(k in blob for k in ("anr", "freeze", "crash", "jank")):
+        visual = "crash"
+    elif not visual or visual not in _ALLOWED_AWARE_VISUALS:
+        visual = "security" if "fintech" in blob else "compose"
+    if visual in ("foldable", "payment"):
+        visual = "compose"
+    data["visual"] = visual
+    tags = data.get("tags") or []
+    if isinstance(tags, str):
+        tags = [t.strip() for t in tags.split(",") if t.strip()]
+    data["tags"] = [_clean_text(t) for t in tags][:4]
+    return data
+
+
+def _lint_aware_graphic_content(data: dict) -> list[str]:
+    violations = []
+    for key in ("chip", "category", "headline", "subhead", "visual"):
+        if not data.get(key):
+            violations.append(f"MISSING_FIELD: '{key}' is required for aware graphics")
+    if data.get("visual") not in _ALLOWED_AWARE_VISUALS:
+        violations.append(
+            f"INVALID_VISUAL: '{data.get('visual')}' must be one of {sorted(_ALLOWED_AWARE_VISUALS)}"
+        )
+    plain_headline = re.sub(r"<[^>]+>", "", data.get("headline", ""))
+    if len(plain_headline.split()) < 4:
+        violations.append("SHORT_HEADLINE: headline needs 4+ words")
+    if len(data.get("subhead", "").split()) > 22:
+        violations.append("LONG_SUBHEAD: keep subhead under 22 words (less text on image)")
+    # Ban dense poster copy
+    if any(k in data for k in ("bullets", "takeaways", "flow_nodes", "stat_value")) and data.get("bullets"):
+        violations.append("TOO_DENSE: aware graphics must not include bullet lists")
+    return violations
+
+
+def _clean_bullet_card_content(data: dict) -> dict:
+    data["chip"] = _clean_text(data.get("chip", "")).upper() or "ANDROID"
+    data["eyebrow"] = _clean_text(data.get("eyebrow", "")).upper() or "ENGINEERING NOTES"
+    data["category"] = _clean_text(data.get("category", "")).upper() or "PRODUCTION"
+    headline = str(data.get("headline", "")).strip()
+    headline = re.sub(r"\*{1,3}", "", headline)
+    data["headline"] = headline
+    data["subhead"] = _clean_text(data.get("subhead", ""))
+    bullets = [_clean_text(b) for b in (data.get("bullets") or []) if _clean_text(b)]
+    while len(bullets) < 3:
+        bullets.append("Audit this path against your current production release train")
+    data["bullets"] = bullets[:3]
+    return data
+
+
+def _lint_bullet_card_content(data: dict) -> list[str]:
+    violations = []
+    for key in ("chip", "category", "headline", "subhead", "bullets"):
+        if not data.get(key):
+            violations.append(f"MISSING_FIELD: '{key}' is required for bullet cards")
+    plain_headline = re.sub(r"<[^>]+>", "", data.get("headline", ""))
+    if len(plain_headline.split()) < 4:
+        violations.append("SHORT_HEADLINE: headline needs 4+ words")
+    if len(data.get("bullets", [])) != 3:
+        violations.append("BULLET_COUNT: bullets must contain exactly 3 items")
+    for i, tip in enumerate(data.get("bullets", [])):
+        if len(str(tip).split()) < 5:
+            violations.append(f"SHORT_BULLET: bullets[{i}] must be at least 5 words")
+    return violations
+
+
+def _lint_hook_poster_content(data: dict) -> list[str]:
+    violations = []
+    required = ["category", "hook_line", "punch_line", "stakes", "contrast_left", "contrast_right", "bullets"]
+    for key in required:
+        if not data.get(key):
+            violations.append(f"MISSING_FIELD: '{key}' is required for hook posters")
+
+    hook = data.get("hook_line", "")
+    punch = data.get("punch_line", "")
+    if len(hook.split()) < 3:
+        violations.append("SHORT_HOOK: hook_line must be at least 3 words")
+    if len(hook.split()) > 12:
+        violations.append("LONG_HOOK: hook_line must stay under 12 words")
+    if len(punch.split()) < 3:
+        violations.append("SHORT_PUNCH: punch_line must be at least 3 words")
+
+    joined = " ".join([
+        hook, punch, data.get("stakes", ""),
+        data.get("contrast_left", {}).get("text", ""),
+        data.get("contrast_right", {}).get("text", ""),
+        " ".join(data.get("bullets", [])),
+    ])
+    banned_match = _BANNED_ABSTRACT.search(joined)
+    if banned_match:
+        violations.append(f"BANNED_PHRASE: '{banned_match.group(0)}' found in content")
+    if "\n" in data.get("contrast_right", {}).get("text", "") or "{" in joined:
+        violations.append("CODE_ON_POSTER: keep poster text free of code blocks / braces")
+
+    left = data.get("contrast_left") or {}
+    right = data.get("contrast_right") or {}
+    if len(str(left.get("text", "")).split()) < 3:
+        violations.append("SHORT_CONTRAST_LEFT: contrast_left.text needs 3+ words")
+    if len(str(right.get("text", "")).split()) < 3:
+        violations.append("SHORT_CONTRAST_RIGHT: contrast_right.text needs 3+ words")
+
+    if len(data.get("bullets", [])) != 3:
+        violations.append("BULLET_COUNT: bullets must contain exactly 3 items")
+    for i, tip in enumerate(data.get("bullets", [])):
+        if len(tip.split()) < 5:
+            violations.append(f"SHORT_BULLET: bullets[{i}] must be at least 5 words")
+
+    if not _has_android_token(joined):
+        plain = ("android", "compose", "kotlin", "main thread", "play store", "anr", "jank", "room", "viewmodel")
+        if not any(p in joined.lower() for p in plain):
+            violations.append("MISSING_ANDROID_CUE: poster needs at least one Android/Kotlin practical cue")
+
+    return violations
+
+
 def _prepare_code_card_for_render(data: dict) -> dict:
     data = _clean_code_card_content(data)
     data["before_code_html"] = _highlight_kotlin(
@@ -596,13 +1010,48 @@ def _clean_content(data: dict) -> dict:
 
 
 def generate_process_content(topic: str, post_text: str, generate_text_fn,
-                             template: str = "process_infographic_dark.html.j2") -> dict:
+                             template: str = "hook_poster_dark.html.j2") -> dict:
     """
     Call the LLM to produce the content dict for the chosen template type.
-    Phase 4: Validates every field against Android API token requirements.
     Retries up to 3 times on lint violations.
     """
-    if "code_card" in template:
+    if "aware_graphic" in template:
+        prompt = _AWARE_GRAPHIC_CONTENT_PROMPT.format(topic=topic, post_text=post_text[:2500])
+        required_keys = ["chip", "category", "headline", "subhead", "visual"]
+        lint_fn = _lint_aware_graphic_content
+        clean_fn = _clean_aware_graphic_content
+        card_kind = "aware graphic"
+    elif "bullet_card" in template:
+        prompt = _BULLET_CARD_CONTENT_PROMPT.format(topic=topic, post_text=post_text[:2500])
+        required_keys = ["chip", "category", "headline", "subhead", "bullets"]
+        lint_fn = _lint_bullet_card_content
+        clean_fn = _clean_bullet_card_content
+        card_kind = "bullet card"
+    elif "news_graphic" in template:
+        prompt = _NEWS_GRAPHIC_CONTENT_PROMPT.format(topic=topic, post_text=post_text[:2500])
+        required_keys = [
+            "category", "chip", "eyebrow", "headline", "subhead",
+            "visual", "stat_label", "stat_value", "takeaway",
+        ]
+        lint_fn = _lint_news_graphic_content
+        clean_fn = _clean_news_graphic_content
+        card_kind = "news graphic"
+    elif "hook_poster_quote" in template:
+        prompt = _HOOK_QUOTE_CONTENT_PROMPT.format(topic=topic, post_text=post_text[:2500])
+        required_keys = ["category", "hook_line", "punch_line", "stakes"]
+        lint_fn = _lint_hook_quote_content
+        clean_fn = _clean_hook_quote_content
+        card_kind = "quote poster"
+    elif "hook_poster" in template:
+        prompt = _HOOK_POSTER_CONTENT_PROMPT.format(topic=topic, post_text=post_text[:2500])
+        required_keys = [
+            "category", "hook_line", "punch_line", "stakes",
+            "contrast_left", "contrast_right", "bullets",
+        ]
+        lint_fn = _lint_hook_poster_content
+        clean_fn = _clean_hook_poster_content
+        card_kind = "hook poster"
+    elif "code_card" in template:
         prompt = _CODE_CARD_CONTENT_PROMPT.format(topic=topic, post_text=post_text[:2500])
         required_keys = [
             "category", "headline", "subhead", "tagline",
@@ -610,13 +1059,16 @@ def generate_process_content(topic: str, post_text: str, generate_text_fn,
         ]
         lint_fn = _lint_code_card_content
         clean_fn = _clean_code_card_content
+        card_kind = "code card"
     else:
         prompt = _ARCHITECTURE_CONTENT_PROMPT.format(topic=topic, post_text=post_text[:2500])
         required_keys = ["category", "headline", "subhead", "tagline", "flow_nodes", "takeaways"]
         lint_fn = _lint_architecture_content
         clean_fn = _clean_architecture_content
+        card_kind = "architecture card"
 
     last_violations = []
+    raw = ""
     for attempt in range(3):
         raw = generate_text_fn(prompt, _SYSTEM)
         raw = raw.strip()
@@ -630,22 +1082,31 @@ def generate_process_content(topic: str, post_text: str, generate_text_fn,
             print(f"  [infographic] Attempt {attempt + 1}: JSON parse error: {e}")
             continue
 
-        if "code_card" in template:
-            if not all(k in data for k in required_keys):
-                print(f"  [infographic] Attempt {attempt + 1}: Missing required code card fields")
+        if not all(k in data for k in required_keys):
+            print(f"  [infographic] Attempt {attempt + 1}: Missing required {card_kind} fields")
+            continue
+
+        if "aware_graphic" in template or "news_graphic" in template or "hook_poster_quote" in template:
+            pass
+        elif "bullet_card" in template:
+            if len(data.get("bullets", [])) < 3:
+                print(f"  [infographic] Attempt {attempt + 1}: bullets must contain 3 items")
+                continue
+        elif "hook_poster" in template:
+            if len(data.get("bullets", [])) < 3:
+                print(f"  [infographic] Attempt {attempt + 1}: bullets must contain 3 items")
+                continue
+        elif "code_card" in template:
+            if len(data.get("takeaways", [])) < 3:
+                print(f"  [infographic] Attempt {attempt + 1}: takeaways must contain 3 items")
+                continue
+        else:
+            if len(data.get("flow_nodes", [])) != 3:
+                print(f"  [infographic] Attempt {attempt + 1}: flow_nodes must contain 3 items")
                 continue
             if len(data.get("takeaways", [])) < 3:
                 print(f"  [infographic] Attempt {attempt + 1}: takeaways must contain 3 items")
                 continue
-        elif not all(k in data for k in required_keys):
-            print(f"  [infographic] Attempt {attempt + 1}: Missing required architecture card fields")
-            continue
-        elif len(data.get("flow_nodes", [])) != 3:
-            print(f"  [infographic] Attempt {attempt + 1}: flow_nodes must contain 3 items")
-            continue
-        elif len(data.get("takeaways", [])) < 3:
-            print(f"  [infographic] Attempt {attempt + 1}: takeaways must contain 3 items")
-            continue
 
         data = clean_fn(data)
 
@@ -655,7 +1116,6 @@ def generate_process_content(topic: str, post_text: str, generate_text_fn,
             print(f"  [infographic] Attempt {attempt + 1}: Lint violations:")
             for v in violations:
                 print(f"    ✗ {v}")
-            # Inject violation feedback into next prompt for targeted regeneration
             violation_summary = "\n".join(f"- {v}" for v in violations[:5])
             prompt = prompt + f"\n\nPREVIOUS ATTEMPT FAILED THESE CHECKS — fix them:\n{violation_summary}"
             continue
@@ -663,7 +1123,6 @@ def generate_process_content(topic: str, post_text: str, generate_text_fn,
         print(f"  [infographic] Attempt {attempt + 1}: Lint PASSED — content is valid")
         return data
 
-    # If all attempts failed lint, log violations and return best-effort data
     print(f"  [infographic] WARNING: Content lint failed after 3 attempts. Violations: {last_violations}")
     print(f"  [infographic] Returning best-effort content (may have abstract fields).")
     try:
@@ -681,7 +1140,33 @@ def render_infographic(content: dict, out_path: str, template: str = "process_in
     from renderer.render import render
     if "code_card" in template:
         content = _prepare_code_card_for_render(content)
+    if "aware_graphic" in template:
+        content = _attach_aware_scene_bitmap(content)
     return render(content, out_path, template=template)
+
+
+def _attach_aware_scene_bitmap(content: dict, *, force_regen: bool = False) -> dict:
+    """Inject photorealistic Gemini scene bitmap as data URI (no SVG icons)."""
+    if content.get("scene_image"):
+        return content
+    visual = str(content.get("visual") or "compose").lower().replace(" ", "_")
+    if visual not in _ALLOWED_AWARE_VISUALS:
+        visual = "compose"
+    topic_hint = " ".join(
+        filter(None, [
+            str(content.get("category", "")),
+            re.sub(r"<[^>]+>", "", str(content.get("headline", ""))),
+        ])
+    )
+    try:
+        from scripts.services.scene_bitmap import ensure_scene_data_uri
+        content["scene_image"] = ensure_scene_data_uri(
+            visual, topic=topic_hint, force_regen=force_regen
+        )
+        content["visual"] = visual
+    except Exception as exc:
+        print(f"  [infographic] WARNING: bitmap scene failed ({exc}); render will show placeholder")
+    return content
 
 
 def render_carousel_pdf(content: dict, out_pdf_path: str, template: str = "carousel_card.html.j2") -> str:

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; overflow: hidden; background: #0b1220; }
+  :root {
+    --bg: #0b1220;
+    --ink: #f8fafc;
+    --muted: #94a3b8;
+    --green: #3ddc84;
+    --violet: #a78bfa;
+    --line: rgba(148, 163, 184, 0.20);
+    --card: #111827;
+  }
+  .page {
+    width: 1080px;
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+  }
+  .content {
+    padding: 36px 44px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .top {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.3px;
+    text-transform: uppercase; color: #0b1220;
+    background: var(--green); border-radius: 999px; padding: 7px 12px;
+  }
+  .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.1px; color: var(--muted);
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--green); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .headline {
+    font-size: 42px; font-weight: 800; line-height: 1.08;
+    letter-spacing: -1px; margin-bottom: 12px; max-width: 920px;
+  }
+  .headline em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--violet), #f472b6);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .subhead {
+    font-size: 18px; font-weight: 600; line-height: 1.4;
+    color: var(--muted); max-width: 880px; margin-bottom: 8px;
+  }
+  .bullets {
+    display: flex; flex-direction: column; gap: 12px;
+    margin-top: 8px;
+  }
+  .bullet {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 14px;
+    align-items: start;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px 18px;
+  }
+  .num {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: rgba(61,220,132,0.12);
+    color: var(--green);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .bullet-text {
+    font-size: 18px; font-weight: 650; line-height: 1.35;
+    padding-top: 6px;
+  }
+  .footer {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-top: 1px solid var(--line); padding-top: 14px; margin-top: 4px;
+  }
+  .author-name { font-size: 16px; font-weight: 700; }
+  .author-title { font-size: 12px; color: var(--muted); margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="content">
+    <div class="top">
+      <div class="chip">{{ chip | default('ANDROID') }}</div>
+      <div class="meta">{{ eyebrow | default('ENGINEERING NOTES') }}</div>
+    </div>
+
+    <div>
+      <div class="eyebrow">{{ category }}</div>
+      <div class="headline">{{ headline | safe }}</div>
+      <div class="subhead">{{ subhead }}</div>
+      <div class="bullets">
+        {% for b in bullets %}
+        <div class="bullet">
+          <div class="num">{{ '%02d'|format(loop.index) }}</div>
+          <div class="bullet-text">{{ b }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <div class="author-name">Aquib Rashid Shaikh</div>
+        <div class="author-title">Senior Android Developer &amp; Mobile Tech Lead</div>
+      </div>
+      <div class="meta">ANDROID / KOTLIN</div>
+    </div>
+  </div>
+</div>
+<script>
+function drawInfographic() {
+  const page = document.querySelector('.page');
+  const content = document.querySelector('.content');
+  const h = Math.max(620, Math.ceil(content.getBoundingClientRect().height));
+  page.style.height = h + 'px';
+  document.body.style.height = h + 'px';
+}
+drawInfographic();
+</script>
+</body>
+</html>

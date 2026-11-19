@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; overflow: hidden; }
+  :root {
+    --paper: #10131a;
+    --ink: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #fb923c;
+    --line: rgba(255,255,255,0.12);
+  }
+  .page {
+    width: 1080px; background: var(--paper);
+    position: relative; overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .page::before {
+    content:''; position:absolute; inset:0;
+    background:
+      radial-gradient(ellipse 70% 55% at 80% 0%, rgba(251,146,60,0.20), transparent 55%),
+      radial-gradient(ellipse 50% 40% at 10% 100%, rgba(45,212,191,0.10), transparent 50%);
+  }
+  .content { position:relative; z-index:1; padding: 64px 64px 48px; }
+  .top-row { display:flex; justify-content:space-between; align-items:center; margin-bottom: 48px; }
+  .category {
+    font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:700;
+    letter-spacing:1.8px; color: var(--accent); text-transform:uppercase;
+  }
+  .lang-pill {
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700;
+    color: var(--muted); border:1px solid var(--line); border-radius:999px; padding:6px 12px;
+  }
+  .quote-mark {
+    font-size: 96px; line-height: 0.8; color: var(--accent); opacity: 0.85;
+    font-weight: 800; margin-bottom: 18px;
+  }
+  .hook-line {
+    font-size: 56px; font-weight: 800; line-height: 1.08;
+    letter-spacing: -1.4px; color: var(--ink); max-width: 920px;
+    margin-bottom: 28px;
+  }
+  .punch-line {
+    font-size: 28px; font-weight: 600; line-height: 1.35;
+    color: var(--muted); max-width: 860px; margin-bottom: 40px;
+  }
+  .stakes {
+    font-size: 20px; font-weight: 500; color: var(--ink);
+    border-left: 4px solid var(--accent); padding-left: 18px; max-width: 820px;
+    margin-bottom: 48px; line-height: 1.45;
+  }
+  .footer {
+    display:flex; justify-content:space-between; align-items:flex-end;
+    border-top:1px solid var(--line); padding-top: 22px;
+  }
+  .author-name { font-size:18px; font-weight:700; color: var(--ink); }
+  .author-title { font-size:14px; color: var(--muted); margin-top:4px; }
+  .footer-right {
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700;
+    letter-spacing:1.2px; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="content">
+    <div class="top-row">
+      <div class="category">{{ category }}</div>
+      <div class="lang-pill">Android</div>
+    </div>
+    <div class="quote-mark">“</div>
+    <div class="hook-line">{{ hook_line }}</div>
+    <div class="punch-line">{{ punch_line }}</div>
+    <div class="stakes">{{ stakes }}</div>
+    <div class="footer">
+      <div>
+        <div class="author-name">Aquib Rashid Shaikh</div>
+        <div class="author-title">Senior Android Developer &amp; Mobile Tech Lead</div>
+      </div>
+      <div class="footer-right">ANDROID / KOTLIN</div>
+    </div>
+  </div>
+</div>
+<script>
+function drawInfographic() {
+  const page = document.querySelector('.page');
+  const content = document.querySelector('.content');
+  const h = Math.min(1500, Math.max(600, content.scrollHeight + 8));
+  page.style.height = h + 'px';
+  document.body.style.height = h + 'px';
+}
+drawInfographic();
+</script>
+</body>
+</html>

@@ -2,10 +2,11 @@ name: Autonomous LinkedIn Agent
 
 on:
   schedule:
+    # Mon/Wed/Fri only — 3 posts/week at ~09:00 IST
     # Primary: 3:25 AM UTC = 8:55 AM IST (off-peak -- avoids :00/:30 queue congestion)
-    - cron: '25 3 * * *'
+    - cron: '25 3 * * 1,3,5'
     # Backup:  3:55 AM UTC = 9:25 AM IST (catches scheduler drops/delays on primary)
-    - cron: '55 3 * * *'
+    - cron: '55 3 * * 1,3,5'
   workflow_dispatch:
     inputs:
       topic:
@@ -81,6 +82,8 @@ jobs:
           GEMINI_API_KEY:         ${{ secrets.GEMINI_API_KEY }}
           GEMINI_API_KEY_2:       ${{ secrets.GEMINI_API_KEY_2 }}
           EURON_API_KEY:          ${{ secrets.EURON_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID:  ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN:   ${{ secrets.CLOUDFLARE_API_TOKEN }}
           LINKEDIN_ACCESS_TOKEN:  ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_PERSON_ID:     ${{ secrets.LINKEDIN_PERSON_ID }}
           TELEGRAM_BOT_TOKEN:     ${{ secrets.TELEGRAM_BOT_TOKEN }}

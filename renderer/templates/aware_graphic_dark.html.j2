@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; overflow: hidden; background: #0b1220; }
+  :root {
+    --bg: #0b1220;
+    --ink: #f8fafc;
+    --muted: #94a3b8;
+    --green: #3ddc84;
+    --violet: #a78bfa;
+    --line: rgba(148, 163, 184, 0.20);
+  }
+  .page {
+    width: 1080px;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+  }
+  .content {
+    position: relative; z-index: 2;
+    padding: 28px 36px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .top {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.3px;
+    text-transform: uppercase; color: #0b1220;
+    background: var(--green); border-radius: 999px; padding: 7px 12px;
+  }
+  .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.1px; color: var(--muted);
+  }
+  .hero {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .copy {
+    flex: 1 1 58%;
+    max-width: 60%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--green); text-transform: uppercase;
+  }
+  .headline {
+    font-size: 46px; font-weight: 800; line-height: 1.08;
+    letter-spacing: -1.2px;
+  }
+  .headline em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--violet), #f472b6);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .subhead {
+    font-size: 18px; font-weight: 600; line-height: 1.42;
+    color: var(--muted);
+  }
+  .stack { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
+  .stack span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.7px;
+    color: var(--muted); border: 1px solid var(--line);
+    border-radius: 999px; padding: 6px 9px; background: rgba(15,23,42,0.65);
+  }
+  .stage {
+    /* Large product asset — match scheduled_2026-11-20 phone scale */
+    flex: 0 0 340px;
+    width: 340px;
+    height: 520px;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: none;
+    overflow: visible;
+  }
+  .stage img {
+    width: 340px;
+    height: 520px;
+    object-fit: contain;
+    object-position: center right;
+    display: block;
+    background: transparent !important;
+    /* NO CSS filter — was tinting transparent pad into a visible box */
+    filter: none !important;
+  }
+  .footer {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-top: 1px solid var(--line); padding-top: 14px;
+  }
+  .author-name { font-size: 16px; font-weight: 700; }
+  .author-title { font-size: 12px; color: var(--muted); margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="content">
+    <div class="top">
+      <div class="chip">{{ chip | default('ANDROID') }}</div>
+      <div class="meta">{{ eyebrow | default('MOBILE ENGINEERING') }}</div>
+    </div>
+
+    <div class="hero">
+      <div class="copy">
+        <div class="eyebrow">{{ category }}</div>
+        <div class="headline">{{ headline | safe }}</div>
+        <div class="subhead">{{ subhead }}</div>
+        {% if tags %}
+        <div class="stack">
+          {% for t in tags %}<span>{{ t }}</span>{% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="stage">
+        {% if scene_image %}
+        <img src="{{ scene_image }}" alt="" />
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <div class="author-name">Aquib Rashid Shaikh</div>
+        <div class="author-title">Senior Android Developer &amp; Mobile Tech Lead</div>
+      </div>
+      <div class="meta">ANDROID / KOTLIN</div>
+    </div>
+  </div>
+</div>
+<script>
+function drawInfographic() {
+  const page = document.querySelector('.page');
+  const content = document.querySelector('.content');
+  const h = Math.max(580, Math.ceil(content.getBoundingClientRect().height));
+  page.style.height = h + 'px';
+  document.body.style.height = h + 'px';
+}
+drawInfographic();
+</script>
+</body>
+</html>

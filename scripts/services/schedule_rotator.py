@@ -1,89 +1,153 @@
 """
-Schedule Rotator: Enforces daily format and visual diversity.
-Ensures consecutive posts never use the same format, archetype, or visual theme.
-
-Weekly Matrix:
-- Monday:    Architecture Blueprint Flow (Dark) — Scale & System Incidents
-- Tuesday:   Code Autopsy & Refactoring (Dark)  — Before/After Kotlin Teardowns
-- Wednesday: Editorial Blueprint (Light)        — OS Internals & Breaking Android News
-- Thursday:  Contrarian Code Card (Light)       — Anti-Patterns & Architecture Debates
-- Friday:    Hardware & Low-Level Flow (Dark)   — BLE, Media3, NDK, Protocol Deep Dives
+Schedule Rotator — 3 posts/week (Mon / Wed / Fri) with day content pillars.
 """
 
 from datetime import datetime
+
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
     from backports.zoneinfo import ZoneInfo
 
+# Only these weekdays auto-publish (Mon=0, Wed=2, Fri=4)
+PUBLISH_WEEKDAYS = (0, 2, 4)
+
 WEEKDAY_ROTATION = {
-    0: {  # Monday
+    0: {  # Monday — Android engineering
         "day_name": "Monday",
-        "theme_name": "System Architecture Blueprint",
+        "pillar": "android",
+        "publishes": True,
+        "theme_name": "Android Engineering",
         "preferred_archetype": "SCALE_INCIDENT_WAR_STORY",
-        "template": "process_infographic_dark.html.j2",
+        "template": "aware_graphic_dark.html.j2",
         "theme": "dark",
-        "format_desc": "Dark 3-Node Architecture Flow Blueprint"
+        "format_desc": "Android production / Compose / Kotlin / Play — content-aware card",
+        "topic_hints": [
+            "android", "kotlin", "compose", "jetpack", "anr", "crash", "jank",
+            "play console", "gradle", "room", "coroutines", "architecture",
+        ],
+        "topic_boost": [
+            "compose", "kotlin", "anr", "crash", "play", "gradle", "room",
+            "viewmodel", "jank", "startup", "16kb", "baseline profile",
+        ],
     },
-    1: {  # Tuesday
+    1: {  # Tuesday — no publish
         "day_name": "Tuesday",
-        "theme_name": "Code Autopsy & Refactoring",
+        "pillar": "off",
+        "publishes": False,
+        "theme_name": "No Publish",
         "preferred_archetype": "CODE_AUTOPSY_TEARDOWN",
-        "template": "code_card_dark.html.j2",
+        "template": "aware_graphic_dark.html.j2",
         "theme": "dark",
-        "format_desc": "Dark Before vs After Kotlin Syntax-Highlighted Code Card"
+        "format_desc": "Skip — weekly cadence is Mon/Wed/Fri only",
+        "topic_hints": [],
+        "topic_boost": [],
     },
-    2: {  # Wednesday
+    2: {  # Wednesday — AI for Android / AI development
         "day_name": "Wednesday",
-        "theme_name": "Trending Tech & OS Internals",
+        "pillar": "ai_android",
+        "publishes": True,
+        "theme_name": "AI for Android",
         "preferred_archetype": "OS_INTERNALS_DEEP_DIVE",
-        "template": "process_infographic_light.html.j2",
-        "theme": "light",
-        "format_desc": "Editorial Light System Mechanism Blueprint"
+        "template": "aware_graphic_dark.html.j2",
+        "theme": "dark",
+        "format_desc": "AI growing + on-device / Gemini / ML for Android — content-aware card",
+        "topic_hints": [
+            "ai", "gemini", "gemini nano", "on-device", "aicore", "ml kit",
+            "llm", "genai", "mediapipe", "android ai",
+        ],
+        "topic_boost": [
+            "gemini", "nano", "aicore", "on-device", "ml kit", "llm", "genai",
+            "mediapipe", "ai", "inference",
+        ],
     },
-    3: {  # Thursday
+    3: {  # Thursday — no publish
         "day_name": "Thursday",
-        "theme_name": "Contrarian Architecture Teardown",
+        "pillar": "off",
+        "publishes": False,
+        "theme_name": "No Publish",
         "preferred_archetype": "CONTRARIAN_ARCHITECTURE_CALLOUT",
-        "template": "code_card_light.html.j2",
-        "theme": "light",
-        "format_desc": "Light Modern Code & Pattern Comparison Card"
+        "template": "aware_graphic_dark.html.j2",
+        "theme": "dark",
+        "format_desc": "Skip — weekly cadence is Mon/Wed/Fri only",
+        "topic_hints": [],
+        "topic_boost": [],
     },
-    4: {  # Friday
+    4: {  # Friday — trending tech news
         "day_name": "Friday",
-        "theme_name": "Hardware, Media & Protocol Deep Dive",
-        "preferred_archetype": "HARDWARE_LOW_LEVEL_DEEP_DIVE",
-        "template": "process_infographic_dark.html.j2",
-        "theme": "dark",
-        "format_desc": "Dark Hardware/Protocol Low-Level Architecture Flow"
-    },
-    5: {  # Saturday
-        "day_name": "Saturday",
-        "theme_name": "Mobile Engineering Leadership & Philosophy",
+        "pillar": "tech_news",
+        "publishes": True,
+        "theme_name": "Trending Tech News",
         "preferred_archetype": "CONTRARIAN_ARCHITECTURE_CALLOUT",
-        "template": "process_infographic_light.html.j2",
-        "theme": "light",
-        "format_desc": "Editorial Weekend Thought Leadership Card"
-    },
-    6: {  # Sunday
-        "day_name": "Sunday",
-        "theme_name": "Weekly Android Engineering Review",
-        "preferred_archetype": "SCALE_INCIDENT_WAR_STORY",
-        "template": "process_infographic_dark.html.j2",
+        "template": "aware_graphic_dark.html.j2",
         "theme": "dark",
-        "format_desc": "Dark High-Scale Recap Blueprint"
-    }
+        "format_desc": "Trending tech / Apple AI / layoffs / platform news — content-aware card",
+        "topic_hints": [
+            "apple", "openai", "layoff", "funding", "policy", "regulation",
+            "breaking", "launch", "wwdc", "pixel", "samsung", "ai news",
+        ],
+        "topic_boost": [
+            "apple", "openai", "layoff", "layoffs", "breaking", "launch",
+            "pixel", "samsung", "policy", "funding", "wwdc", "google i/o",
+        ],
+    },
+    5: {  # Saturday — no publish
+        "day_name": "Saturday",
+        "pillar": "off",
+        "publishes": False,
+        "theme_name": "No Publish",
+        "preferred_archetype": "CONTRARIAN_ARCHITECTURE_CALLOUT",
+        "template": "aware_graphic_dark.html.j2",
+        "theme": "dark",
+        "format_desc": "Skip — weekly cadence is Mon/Wed/Fri only",
+        "topic_hints": [],
+        "topic_boost": [],
+    },
+    6: {  # Sunday — no publish
+        "day_name": "Sunday",
+        "pillar": "off",
+        "publishes": False,
+        "theme_name": "No Publish",
+        "preferred_archetype": "SCALE_INCIDENT_WAR_STORY",
+        "template": "aware_graphic_dark.html.j2",
+        "theme": "dark",
+        "format_desc": "Skip — weekly cadence is Mon/Wed/Fri only",
+        "topic_hints": [],
+        "topic_boost": [],
+    },
 }
+
+# Manual posts already shipped — never regenerate these themes
+BLOCKED_TOPIC_PHRASES = (
+    "upi",
+    "mdr",
+    "merchant discount",
+    "foldable",
+    "fold was already",
+    "the fold",
+    "apple fold",
+    "galaxy fold",
+    "windowsizeclass fold",
+)
 
 
 def get_weekday_rotation(dt: datetime = None, tz_name: str = "Asia/Kolkata") -> dict:
-    """Returns the visual format and archetype rotation rule for the given date (default: today IST)."""
+    """Returns the visual format and pillar rule for the given date (default: today IST)."""
     if dt is None:
         try:
-            tz = ZoneInfo(tz_name)
+            dt = datetime.now(ZoneInfo(tz_name))
         except Exception:
-            tz = None
-        dt = datetime.now(tz) if tz else datetime.now()
+            dt = datetime.now()
+    return WEEKDAY_ROTATION[dt.weekday()]
 
-    weekday = dt.weekday()
-    return WEEKDAY_ROTATION.get(weekday, WEEKDAY_ROTATION[0])
+
+def is_publish_day(dt: datetime = None, tz_name: str = "Asia/Kolkata") -> bool:
+    """True only on Monday / Wednesday / Friday."""
+    rotation = get_weekday_rotation(dt, tz_name)
+    return bool(rotation.get("publishes"))
+
+
+def is_blocked_topic(text: str) -> bool:
+    """True if topic matches already-posted manual themes (UPI / fold)."""
+    blob = (text or "").lower()
+    return any(p in blob for p in BLOCKED_TOPIC_PHRASES)

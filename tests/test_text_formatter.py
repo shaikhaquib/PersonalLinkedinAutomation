@@ -40,6 +40,20 @@ class TestTextFormatter(unittest.TestCase):
         self.assertIn("-Wl,-z,max-page-size=16384", result)
         self.assertIn("readelf -l libnative.so | grep -E 'LOAD|ALIGN'", result)
 
+    def test_strips_orphan_asterisk_lines(self):
+        raw = "#AndroidDev #Kotlin\n\n*\n"
+        result = format_linkedin_text(raw)
+        self.assertNotIn("*", result)
+        self.assertIn("#AndroidDev", result)
+
+    def test_markdown_link_to_plain(self):
+        raw = "See [Play Console](https://play.google.com/console) for details."
+        result = format_linkedin_text(raw)
+        self.assertEqual(
+            result,
+            "See Play Console (https://play.google.com/console) for details.",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

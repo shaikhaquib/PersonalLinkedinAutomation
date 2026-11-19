@@ -1,14 +1,8 @@
 """
-Hook Matrix — exactly 5 archetypes per AGENT_SYSTEM_BLUEPRINT.md §5.
-Each archetype has a structurally distinct opening style calibrated against
-the blueprint's 5 sample posts to prevent opener repetition.
+Hook Matrix — 5 archetypes with STRUCTURALLY different post formats.
 
-Blueprint §5 Archetypes:
-  1. CODE_AUTOPSY_TEARDOWN       — Before/After code comparison
-  2. SCALE_INCIDENT_WAR_STORY    — 50M+ user scale production incident
-  3. OS_INTERNALS_DEEP_DIVE      — Android OS / Linux kernel mechanism
-  4. CONTRARIAN_ARCHITECTURE_CALLOUT — Cargo-cult anti-pattern callout
-  5. HARDWARE_LOW_LEVEL_DEEP_DIVE — BLE/IPC/OTT hardware protocol layer
+Each archetype must produce a visibly different LinkedIn post shape.
+Never collapse all of them into: pain → lecture → 3 bullets → recruiter.
 """
 
 import random
@@ -16,106 +10,98 @@ import random
 HOOK_STYLES = [
     {
         "id": "CODE_AUTOPSY_TEARDOWN",
-        "name": "Code Autopsy / Architectural Teardown",
-        "template_hint": "code_card_dark.html.j2",
+        "name": "One Bad Pattern / One Rule",
+        "format": "ONE_RULE",
+        "template_hint": "hook_poster_dark.html.j2",
+        "recruiter_line": False,
         "instruction": (
-            "Open directly with a subtle production bug rooted in a widely-used code pattern. "
-            "Do NOT open with a time anchor ('three weeks ago', 'yesterday'). "
-            "Start with the architectural problem itself: what the bad code does, "
-            "and why it causes silent failure in Compose recomposition, BLE GATT state, "
-            "or process death recovery. "
-            "Example: 'Passing ViewModel instances down your Composable tree is not Clean Architecture. "
-            "It is the number one cause of untraceable recomposition loops in production apps.' "
-            "Follow with the specific Android mechanism (Compose compiler stability, "
-            "SavedStateHandle, GATT callback contract), then show the production fix pattern. "
-            "Structure: Bad pattern → what breaks at the OS/compiler level → production pattern → rule of thumb."
+            "FORMAT = ONE_RULE (short). Do NOT write a tutorial.\n"
+            "Shape:\n"
+            "1) 1–2 lines: name the bad pattern via what users/devs feel.\n"
+            "2) 2–3 lines: why it breaks (one API max).\n"
+            "3) ONE rule of thumb in plain language (no → bullet list).\n"
+            "4) One peer question.\n"
+            "5) Hashtags only. NO recruiter DM line.\n"
+            "Hard ban: 3-bullet fix lists, 'Core Fixes', numbered teaching blocks."
         ),
     },
     {
         "id": "SCALE_INCIDENT_WAR_STORY",
-        "name": "Scale Incident & Debugging War Story (50M+ Users)",
-        "template_hint": "process_infographic_dark.html.j2",
+        "name": "Mini Scene / War Story",
+        "format": "MINI_STORY",
+        "template_hint": "hook_poster_dark.html.j2",
+        "recruiter_line": True,
         "instruction": (
-            "Open with a production-scale constraint or metric that most developers never encounter. "
-            "Do NOT open with a time anchor or personal confession opener. "
-            "Start directly with the production number or system constraint: "
-            "Example: 'At 50 million users, a 0.05% crash rate means 25,000 broken sessions every week.' "
-            "or 'Android's 1MB Binder transaction buffer is shared across your entire app process. "
-            "Send one heavy Bitmap through an Intent, and you get TransactionTooLargeException.' "
-            "Then walk through: the symptom → the Android OS mechanism causing it "
-            "(Binder IPC, LMK oom_adj_score, GC compaction, main thread starvation) → "
-            "the production engineering fix → the measurable outcome. "
-            "All metrics must be realistic and grounded in real Android SDK constraints."
+            "FORMAT = MINI_STORY. Write like a peer recounting a messy day — not a blog.\n"
+            "Shape:\n"
+            "1) A concrete scene (checkout freeze, Play reject email, ANR spike) — no fake company names.\n"
+            "2) What the team wrongly blamed first.\n"
+            "3) The real cause in one plain sentence + one API.\n"
+            "4) What you'd do differently next time (2 sentences max).\n"
+            "5) Question + optional recruiter line + hashtags.\n"
+            "Hard ban: three → bullets, kernel lectures, 'At 50 million users' fake-sounding openers."
         ),
     },
     {
         "id": "OS_INTERNALS_DEEP_DIVE",
-        "name": "Under-the-Hood / OS Internals Deep Dive",
-        "template_hint": "process_infographic_dark.html.j2",
+        "name": "Myth Bust",
+        "format": "MYTH_BUST",
+        "template_hint": "hook_poster_light.html.j2",
+        "recruiter_line": False,
         "instruction": (
-            "Open by naming a specific Android OS or Linux kernel mechanism that senior developers "
-            "know exists but rarely inspect in depth. "
-            "Do NOT start with a story or time anchor. "
-            "Jump straight into the OS reality: "
-            "Example: 'Android's Low Memory Killer doesn't throw OutOfMemoryError. "
-            "It silently sends SIGKILL to cached background processes based on oom_adj_score.' "
-            "or 'Jetpack WindowManager uses a reactive Kotlin Flow for FoldingFeature "
-            "hinge posture — not a callback — because posture is a continuous hardware signal, not an event.' "
-            "Explain exactly what happens at the OS/kernel/ART/hardware layer "
-            "(FusedLocation batching windows, Choreographer VSYNC, ART GC compaction, "
-            "Binder thread pool exhaustion) and what it means for production app behavior."
+            "FORMAT = MYTH_BUST.\n"
+            "Shape:\n"
+            "1) Line 1: 'Most Android teams still believe X.' (or equivalent myth)\n"
+            "2) Line 2–3: What actually happens in production (symptom first).\n"
+            "3) One plain correction naming at most one API/mechanism.\n"
+            "4) One sharp question that invites disagreement.\n"
+            "5) Hashtags only. NO recruiter line. NO bullet lists.\n"
+            "Hard ban: 3-step fix guides, ELF/kernel deep dives, essay tone."
         ),
     },
     {
         "id": "CONTRARIAN_ARCHITECTURE_CALLOUT",
-        "name": "Contrarian Architecture Callout / Anti-Pattern Bust",
-        "template_hint": "code_card_dark.html.j2",
+        "name": "Hot Take",
+        "format": "HOT_TAKE",
+        "template_hint": "hook_poster_quote_dark.html.j2",
+        "recruiter_line": False,
         "instruction": (
-            "Open by directly challenging a widely accepted Android development practice. "
-            "Do NOT use 'Unpopular opinion:' or 'Hot take:' as openers — just state the contrarian claim directly. "
-            "Example: 'Creating a dedicated UseCase class for every single repository method "
-            "is one of the biggest productivity drains in modern Android engineering.' "
-            "or 'Suppressing configuration changes with android:configChanges on foldables "
-            "is technical debt that breaks Jetpack WindowManager reactive posture detection.' "
-            "Then give the architectural reason with real API names: what Dagger/Hilt does with the graph, "
-            "what the Compose compiler stability classifier marks, what the GATT native stack serializes. "
-            "End with a concrete pragmatic rule that names the real class or pattern to use instead."
+            "FORMAT = HOT_TAKE. Punchy. Opinionated. Scroll-stopping.\n"
+            "Shape:\n"
+            "1) One blunt claim in the first line (no 'Hot take:' label).\n"
+            "2) 3–5 short lines defending it with production pain, not jargon soup.\n"
+            "3) One boundary: when the unpopular side is actually right.\n"
+            "4) A question that begs a comment argument.\n"
+            "5) Hashtags only. NO bullets. NO recruiter line.\n"
+            "Target length: 450–750 characters. If it looks like a blog post, rewrite shorter."
         ),
     },
     {
         "id": "HARDWARE_LOW_LEVEL_DEEP_DIVE",
-        "name": "Hardware & Low-Level Protocol Deep Dive",
-        "template_hint": "process_infographic_dark.html.j2",
+        "name": "Peer Question Lead",
+        "format": "PEER_QUESTION",
+        "template_hint": "hook_poster_light.html.j2",
+        "recruiter_line": True,
         "instruction": (
-            "Open by naming the specific error code, hardware constraint, or protocol layer rule "
-            "that defines the problem. "
-            "Do NOT start with a time anchor or personal story. "
-            "Jump straight to the protocol or hardware truth: "
-            "Example: 'GATT status 133 is Android's catch-all BLE connection failure code. "
-            "Nine out of ten times, it is caused by calling gatt.connect() "
-            "before the BluetoothGatt native stack has closed the previous handle.' "
-            "or 'ExoPlayer's DefaultLoadControl has a 50-second max buffer by default. "
-            "On mobile cellular networks, this is an OutOfMemoryError waiting to happen "
-            "because MediaCodec allocates hardware-backed DRM secure buffers per keyframe.' "
-            "Walk through: the hardware/protocol constraint → the Android SDK behavior that exposes it → "
-            "the production engineering fix (MTU negotiation, GATT queue serialization via Mutex Channel, "
-            "custom LoadControl thresholds, BLE connection state machine, HLS segment prefetch limits)."
+            "FORMAT = PEER_QUESTION. Lead with curiosity, not a lecture.\n"
+            "Shape:\n"
+            "1) Open with a real peer question engineers argue about.\n"
+            "2) 2–4 lines of your stance / what you've seen break.\n"
+            "3) One practical cue (API or check) — not a full guide.\n"
+            "4) Invite others to share what worked for them.\n"
+            "5) Optional recruiter line + hashtags.\n"
+            "Hard ban: 3-bullet SOPs, architecture sermons, protocol textbooks."
         ),
     },
 ]
 
 
 def select_hook_formula(day_of_year: int = 0, slot_index: int = 0) -> dict:
-    """
-    Select a diverse archetype based on hash + random rotation to guarantee variety.
-    Returns the full archetype dict including template_hint.
-    """
     idx = (day_of_year * 3 + slot_index + random.randint(0, len(HOOK_STYLES) - 1)) % len(HOOK_STYLES)
     return HOOK_STYLES[idx]
 
 
 def get_archetype_by_id(archetype_id: str) -> dict:
-    """Retrieve a specific archetype by its ID string."""
     for style in HOOK_STYLES:
         if style["id"] == archetype_id:
             return style

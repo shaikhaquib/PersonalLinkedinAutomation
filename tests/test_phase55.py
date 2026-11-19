@@ -14,6 +14,8 @@ from scripts.infographic import (
     _lint_architecture_content,
     _clean_architecture_content,
     _prepare_code_card_for_render,
+    _lint_hook_poster_content,
+    _clean_hook_poster_content,
 )
 
 
@@ -272,6 +274,31 @@ class TestTemplatePaletteAndPhase55DOM(unittest.TestCase):
             ],
         }
         self.assertEqual(_lint_code_card_content(valid), [])
+
+    def test_hook_poster_lint_and_templates(self):
+        raw = {
+            "category": "PRODUCTION PAIN",
+            "hook_line": "Checkout freezes for three seconds",
+            "punch_line": "then users blame your network",
+            "stakes": "Main-thread Room reads stall frames before any spinner appears",
+            "contrast_left": {"label": "WHAT USERS FEEL", "text": "Frozen pay button. Angry reviews."},
+            "contrast_right": {"label": "WHAT TO FIX", "text": "Move DB work with Dispatchers.IO"},
+            "bullets": [
+                "Catch jank with FrameMetrics before you ship",
+                "Keep ViewModels thin and push IO outward",
+                "Fail QA builds when frames miss the budget",
+            ],
+        }
+        cleaned = _clean_hook_poster_content(raw)
+        self.assertEqual(_lint_hook_poster_content(cleaned), [])
+
+        for tpl_name in ("hook_poster_dark.html.j2", "hook_poster_light.html.j2"):
+            tpl = self.env.get_template(tpl_name)
+            html = tpl.render(cleaned)
+            self.assertIn("Checkout freezes", html)
+            self.assertIn("WHAT USERS FEEL", html)
+            self.assertIn("Aquib Rashid Shaikh", html)
+            self.assertNotIn("before_code", html)
 
 
 if __name__ == "__main__":

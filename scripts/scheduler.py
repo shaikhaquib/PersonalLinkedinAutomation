@@ -43,6 +43,7 @@ from scripts.storage.history_manager import HistoryManager
 from scripts.services.linkedin_publisher import LinkedInPublisher
 from scripts.services.telegram_notifier import TelegramNotifier
 from scripts.services.schedule_rotator import get_weekday_rotation
+from scripts.services.text_formatter import format_linkedin_text
 import scripts.infographic as ig
 
 LINKEDIN_ACCESS_TOKEN = os.getenv("LINKEDIN_ACCESS_TOKEN")
@@ -119,6 +120,10 @@ def schedule_post_pipeline(date_str: str, time_str: str = "09:00",
 
     if not passed_review:
         print("  [WARN] Draft completed with minor quality review notes. Proceeding with best candidate.")
+
+    # LinkedIn does not render Markdown — normalize before calendar + publish
+    post_text = format_linkedin_text(post_text)
+    first_comment = format_linkedin_text(first_comment or "")
 
     # Step 3: Image Decision & Playwright Render
     print("\n[ Step 3/4 ] Evaluating visual requirement & rendering card...")
