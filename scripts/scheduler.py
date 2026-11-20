@@ -132,9 +132,12 @@ def schedule_post_pipeline(date_str: str, time_str: str = "09:00",
     if needs_image and selected_template:
         print(f"  Template selected: {selected_template}")
         out_name = f"scheduled_{date_str}_{time_str.replace(':', '')}.png"
-        out_png = str(PROJECT_ROOT / "renderer" / "output" / out_name)
+        out_rel = f"renderer/output/{out_name}"
+        out_png = str(PROJECT_ROOT / out_rel)
         content = ig.generate_process_content(topic, post_text, generate_text, template=selected_template)
-        png_path = ig.render_infographic(content, out_png, template=selected_template)
+        ig.render_infographic(content, out_png, template=selected_template)
+        # Store repo-relative path so GitHub Actions (Linux) can resolve the asset
+        png_path = out_rel
         print(f"  Infographic pre-rendered: {png_path}")
 
     # Step 4: Record into Content Calendar
