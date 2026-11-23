@@ -130,10 +130,10 @@
     "image_path": "renderer/output/scheduled_2026-11-23_0900.png",
     "template": "aware_graphic_dark.html.j2",
     "theme": "dark",
-    "status": "scheduled",
+    "status": "published",
     "created_at": "2026-11-19T22:59:12.519060+05:30",
-    "published_at": null,
-    "linkedin_post_id": null
+    "published_at": "2026-11-23T18:51:48.010832+05:30",
+    "linkedin_post_id": "urn:li:share:7530620867119210496"
   },
   {
     "id": "post_2026-11-25_0900",
