@@ -164,9 +164,9 @@
     "image_path": "renderer/output/scheduled_2026-11-27_0900.png",
     "template": "aware_graphic_dark.html.j2",
     "theme": "dark",
-    "status": "scheduled",
+    "status": "published",
     "created_at": "2026-11-19T23:00:46.367362+05:30",
-    "published_at": null,
-    "linkedin_post_id": null
+    "published_at": "2026-11-27T18:23:23.253049+05:30",
+    "linkedin_post_id": "urn:li:share:7532063268606185475"
   }
 ]
